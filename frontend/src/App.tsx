@@ -9,7 +9,12 @@ import MapPage from '@/pages/MapPage'
 import ProjectsPage from '@/pages/ProjectsPage'
 import AnalysesPage from '@/pages/AnalysesPage'
 import ConflictsPage from '@/pages/ConflictsPage'
+import AIControlPage from '@/pages/AIControlPage'
+import TransportationPage from '@/pages/TransportationPage'
+import DashboardPage from '@/pages/DashboardPage'
+import SettingsPage from '@/pages/SettingsPage'
 import { AppShell } from '@/components/layout'
+
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated)
@@ -44,7 +49,7 @@ function App() {
           element={
             <ProtectedRoute>
               <Routes>
-                <Route path="/" element={<ComingSoon title="Dashboard" subtitle="Infrastructure coordination overview" />} />
+                <Route path="/" element={<DashboardPage />} />
                 <Route path="/utilities" element={<UtilitiesPage />} />
                 <Route path="/utilities/:id" element={<UtilityDetailPage />} />
                 <Route path="/utilities/:id/sources/new" element={<UtilityDetailPage />} />
@@ -53,9 +58,12 @@ function App() {
                 <Route path="/projects" element={<ProjectsPage />} />
                 <Route path="/analyses" element={<AnalysesPage />} />
                 <Route path="/conflicts" element={<ConflictsPage />} />
-                <Route path="/ai" element={<ComingSoon title="AI Control Center" subtitle="Privacy, model and cost controls" />} />
+                <Route path="/transportation/:id" element={<TransportationPage />} />
+                <Route path="/transportation" element={<TransportationPage />} />
+                <Route path="/ai" element={<AIControlPage />} />
                 <Route path="/sources" element={<SourcesPage />} />
-                <Route path="/settings" element={<ComingSoon title="Settings" />} />
+                <Route path="/settings" element={<SettingsPage />} />
+
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </ProtectedRoute>

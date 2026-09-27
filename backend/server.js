@@ -25,6 +25,9 @@ const sourceRoutes = require('./src/modules/sources/source.routes');
 const projectRoutes = require('./src/modules/projects/project.routes');
 const analysisRoutes = require('./src/modules/analyses/analysis.routes');
 const conflictRoutes = require('./src/modules/conflicts/conflict.routes');
+const aiRoutes = require('./src/modules/ai/ai.routes');
+const transportationRoutes = require('./src/modules/transportation/transportation.routes');
+const dashboardRoutes = require('./src/modules/dashboard/dashboard.routes');
 
 const app = express();
 
@@ -52,6 +55,10 @@ app.use('/api/sources', sourceRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/analyses', analysisRoutes);
 app.use('/api/conflicts', conflictRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/transportation', transportationRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+
 
 
 // ── Error handler (must be last) ──────────────────────────────

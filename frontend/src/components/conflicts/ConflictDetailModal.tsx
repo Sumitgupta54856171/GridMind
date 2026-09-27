@@ -1,12 +1,14 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   X, Calendar, MapPin, Sparkles,
-  AlertTriangle, ShieldCheck, Check,
+  AlertTriangle, ShieldCheck, Check, Truck, Cpu,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import type { Conflict, ConflictStatus } from '@/api/conflicts'
+
 
 interface ConflictDetailModalProps {
   conflict: Conflict
@@ -19,7 +21,9 @@ export function ConflictDetailModal({
   onClose,
   onStatusChange,
 }: ConflictDetailModalProps) {
+  const navigate = useNavigate()
   const [currentStatus, setCurrentStatus] = useState<ConflictStatus>(conflict.status)
+
   const [updating, setUpdating] = useState(false)
 
   const pA = conflict.projectAId
@@ -290,6 +294,28 @@ export function ConflictDetailModal({
             >
               Dismiss
             </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/transportation/' + conflict._id)}
+              className="text-xs h-8 gap-1.5"
+            >
+              <Truck className="w-3.5 h-3.5 text-primary" />
+              Transportation Impact
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/ai')}
+              className="text-xs h-8 gap-1.5"
+            >
+              <Cpu className="w-3.5 h-3.5 text-indigo-600" />
+              AI Control Center
+            </Button>
           </div>
 
           <Button
@@ -301,6 +327,7 @@ export function ConflictDetailModal({
           >
             Close
           </Button>
+
         </div>
       </Card>
     </div>
