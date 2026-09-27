@@ -1,6 +1,6 @@
 import {
   X, Database, Globe, Calendar, ExternalLink,
-  FolderOpen, Building2, CheckCircle2, Clock, AlertCircle, RefreshCw, Upload,
+  FolderOpen, Building2, CheckCircle2, Clock, AlertCircle, RefreshCw, Upload, Sparkles, FileText,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -12,6 +12,7 @@ interface SourceDetailModalProps {
   source: DataSource
   onClose: () => void
   onEdit?: (source: DataSource) => void
+  onExtract?: (source: DataSource) => void
 }
 
 const TYPE_CONFIG: Record<SourceType, { label: string; badgeClass: string }> = {
@@ -30,7 +31,7 @@ const STATUS_CONFIG: Record<ParserStatus, { label: string; icon: React.Component
   failed: { label: 'Parser Failed', icon: AlertCircle, badgeClass: 'bg-red-50 text-red-700 border-red-200' },
 }
 
-export function SourceDetailModal({ source, onClose, onEdit }: SourceDetailModalProps) {
+export function SourceDetailModal({ source, onClose, onEdit, onExtract }: SourceDetailModalProps) {
   const navigate = useNavigate()
   const typeCfg = TYPE_CONFIG[source.sourceType] || TYPE_CONFIG.manual
   const statusCfg = STATUS_CONFIG[source.parserStatus] || STATUS_CONFIG.pending
@@ -113,10 +114,27 @@ export function SourceDetailModal({ source, onClose, onEdit }: SourceDetailModal
             </div>
           </div>
 
+          {/* Uploaded File Info */}
+          {source.storagePath && (
+            <div className="space-y-1 text-xs">
+              <p className="text-muted-foreground font-medium flex items-center gap-1">
+                <FileText className="w-3.5 h-3.5 text-indigo-500" /> Uploaded Document
+              </p>
+              <div className="flex items-center justify-between p-2 rounded-md bg-indigo-50/50 border border-indigo-100 text-foreground text-xs">
+                <span className="font-mono text-[11px] truncate">{source.storagePath.split('/').pop()}</span>
+                {source.checksum && (
+                  <Badge variant="outline" className="text-[9px] font-mono text-muted-foreground border-border/60">
+                    SHA-256 verified
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* URL & Link */}
-          <div className="space-y-1 text-xs">
-            <p className="text-muted-foreground font-medium">Public Source URL</p>
-            {source.sourceUrl ? (
+          {source.sourceUrl && (
+            <div className="space-y-1 text-xs">
+              <p className="text-muted-foreground font-medium">Public Source URL</p>
               <a
                 href={source.sourceUrl.startsWith('http') ? source.sourceUrl : `https://${source.sourceUrl}`}
                 target="_blank"
@@ -127,18 +145,35 @@ export function SourceDetailModal({ source, onClose, onEdit }: SourceDetailModal
                 <span className="flex-1 truncate">{source.sourceUrl}</span>
                 <ExternalLink className="w-3 h-3 shrink-0" />
               </a>
-            ) : (
-              <p className="text-muted-foreground italic">No public URL recorded.</p>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Action buttons */}
-          <div className="flex gap-2 pt-2 border-t border-border/50">
+          <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-border/50">
+            {onExtract && (
+              <Button
+                size="sm"
+                className="flex-1 text-xs h-8 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white gap-1.5"
+                disabled={source.parserStatus === 'processing'}
+                onClick={() => {
+                  onClose()
+                  onExtract(source)
+                }}
+              >
+                {source.parserStatus === 'processing' ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5" />
+                )}
+                {source.parserStatus === 'processing' ? 'Extracting Projects…' : 'Extract with Gemini AI'}
+              </Button>
+            )}
+
             {onEdit && (
               <Button
                 variant="outline"
                 size="sm"
-                className="flex-1 text-xs h-8"
+                className="text-xs h-8"
                 onClick={() => {
                   onClose()
                   onEdit(source)
@@ -147,16 +182,18 @@ export function SourceDetailModal({ source, onClose, onEdit }: SourceDetailModal
                 Edit Metadata
               </Button>
             )}
+
             <Button
               size="sm"
-              className="flex-1 text-xs h-8 bg-gradient-to-r from-blue-600 to-indigo-600 text-white gap-1.5"
+              variant="outline"
+              className="text-xs h-8 gap-1.5"
               onClick={() => {
                 onClose()
                 navigate(`/utilities/${source.utilityId?._id}/import`)
               }}
             >
               <Upload className="w-3.5 h-3.5" />
-              Import Projects
+              Import
             </Button>
           </div>
         </CardContent>

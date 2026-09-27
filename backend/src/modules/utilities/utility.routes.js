@@ -12,6 +12,8 @@ const {
   createSourceForUtility,
 } = require('../sources/source.controller');
 
+const upload = require('../../middleware/upload');
+
 const router = Router();
 
 router.use(requireAuth);
@@ -24,7 +26,8 @@ router.delete('/:id', deleteUtility);
 
 // Nested Source routes per Low-Level System Design § 11
 router.get('/:utilityId/sources', getSourcesByUtility);
-router.post('/:utilityId/sources', createSourceForUtility);
+router.post('/:utilityId/sources', upload.single('file'), createSourceForUtility);
 
 module.exports = router;
+
 

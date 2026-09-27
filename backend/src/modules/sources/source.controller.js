@@ -1,7 +1,23 @@
+const crypto = require('crypto');
+const fs = require('fs');
 const DataSource = require('../../models/DataSource');
 const Utility = require('../../models/Utility');
 const Project = require('../../models/Project');
 const AuditEvent = require('../../models/AuditEvent');
+const { extractProjectsWithGemini } = require('../../services/aiExtractor');
+
+/**
+ * Computes sha256 checksum of a file on disk.
+ */
+const computeChecksum = (filePath) => {
+  return new Promise((resolve, reject) => {
+    const hash = crypto.createHash('sha256');
+    const stream = fs.createReadStream(filePath);
+    stream.on('data', (data) => hash.update(data));
+    stream.on('end', () => resolve(hash.digest('hex')));
+    stream.on('error', (err) => reject(err));
+  });
+};
 
 /**
  * Enriches data source documents with project counts and utility info.
@@ -24,7 +40,6 @@ const withSourceCounts = async (sources) => {
 };
 
 // GET /api/sources (all sources belonging to user's utilities)
-// Supports optional query: ?utilityId=xxx
 const getAllSources = async (req, res, next) => {
   try {
     const userUtilities = await Utility.find({ ownerId: req.user._id }).select('_id name serviceAreaText');
@@ -77,6 +92,7 @@ const getSourcesByUtility = async (req, res, next) => {
 };
 
 // POST /api/utilities/:utilityId/sources
+// Accepts both application/json and multipart/form-data with uploaded file
 const createSourceForUtility = async (req, res, next) => {
   try {
     const { utilityId } = req.params;
@@ -86,29 +102,53 @@ const createSourceForUtility = async (req, res, next) => {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    const { name, sourceType, sourceUrl, metadata, parserStatus } = req.body;
-    if (!name || typeof name !== 'string' || !name.trim()) {
-      return res.status(400).json({ message: 'name is required' });
+    const name = (req.body.name || req.file?.originalname || '').trim();
+    if (!name) {
+      return res.status(400).json({ message: 'name is required or a file must be provided' });
+    }
+
+    let sourceType = (req.body.sourceType || '').toLowerCase().trim();
+    if (!sourceType && req.file) {
+      const ext = req.file.originalname.split('.').pop()?.toLowerCase();
+      if (ext === 'pdf') sourceType = 'pdf';
+      else if (ext === 'csv') sourceType = 'csv';
+      else if (ext === 'json') sourceType = 'json';
+      else if (ext === 'geojson') sourceType = 'gis';
+      else sourceType = 'manual';
     }
 
     const validTypes = ['pdf', 'csv', 'json', 'gis', 'webpage', 'manual'];
-    const resolvedType = (sourceType || 'manual').toLowerCase();
-    if (!validTypes.includes(resolvedType)) {
-      return res.status(400).json({
-        message: `Invalid sourceType. Must be one of: ${validTypes.join(', ')}`,
-      });
+    const resolvedType = validTypes.includes(sourceType) ? sourceType : 'manual';
+
+    let storagePath = '';
+    let checksum = '';
+
+    if (req.file) {
+      storagePath = req.file.path;
+      checksum = await computeChecksum(req.file.path);
+    }
+
+    let parsedMetadata = req.body.metadata;
+    if (typeof parsedMetadata === 'string') {
+      try {
+        parsedMetadata = JSON.parse(parsedMetadata);
+      } catch {
+        parsedMetadata = {};
+      }
     }
 
     const source = await DataSource.create({
       utilityId,
-      name: name.trim(),
+      name,
       sourceType: resolvedType,
-      sourceUrl: sourceUrl ? sourceUrl.trim() : '',
-      parserStatus: parserStatus || 'pending',
+      sourceUrl: (req.body.sourceUrl || '').trim(),
+      storagePath,
+      checksum,
+      parserStatus: 'pending',
       metadata: {
-        publisher: metadata?.publisher ? metadata.publisher.trim() : utility.name,
-        publicationDate: metadata?.publicationDate || new Date(),
-        description: metadata?.description ? metadata.description.trim() : '',
+        publisher: (parsedMetadata?.publisher || req.body.publisher || utility.name).trim(),
+        publicationDate: parsedMetadata?.publicationDate || new Date(),
+        description: (parsedMetadata?.description || req.body.description || '').trim(),
       },
     });
 
@@ -117,8 +157,61 @@ const createSourceForUtility = async (req, res, next) => {
       action: 'source.created',
       resourceType: 'DataSource',
       resourceId: source._id,
-      metadata: { name: source.name, utilityId, sourceType: source.sourceType },
+      metadata: { name: source.name, utilityId, sourceType: source.sourceType, hasFile: !!req.file },
     });
+
+    // Auto-extract trigger if requested or if file is uploaded
+    const autoExtract = req.body.autoExtract === 'true' || req.body.autoExtract === true;
+    if (autoExtract && (storagePath || source.sourceUrl)) {
+      try {
+        source.parserStatus = 'processing';
+        await source.save();
+
+        const extracted = await extractProjectsWithGemini({
+          filePath: storagePath || undefined,
+          sourceType: resolvedType,
+          utilityName: utility.name,
+          serviceArea: utility.serviceAreaText || '',
+        });
+
+        if (extracted && extracted.length > 0) {
+          for (const p of extracted) {
+            await Project.create({
+              utilityId,
+              sourceId: source._id,
+              name: p.name,
+              description: p.description || '',
+              projectType: p.projectType || '',
+              status: p.status || 'planned',
+              startDate: p.startDate ? new Date(p.startDate) : undefined,
+              endDate: p.endDate ? new Date(p.endDate) : undefined,
+              locationText: p.locationText || '',
+              corridorName: p.corridorName || '',
+              geometry: p.geometry || undefined,
+              locationConfidence: p.locationConfidence || 0.8,
+              extraction: p.extraction || { method: 'llm', confidence: 0.9 },
+              rawFields: p.rawFields || {},
+            });
+          }
+          source.parserStatus = 'completed';
+        } else {
+          source.parserStatus = 'completed';
+        }
+        await source.save();
+
+        await AuditEvent.create({
+          userId: req.user._id,
+          action: 'source.parsed',
+          resourceType: 'DataSource',
+          resourceId: source._id,
+          metadata: { name: source.name, extractedCount: extracted.length },
+        });
+      } catch (extractErr) {
+        console.error('[AI Extract Error]:', extractErr);
+        source.parserStatus = 'failed';
+        await source.save();
+      }
+    }
 
     const populated = await DataSource.findById(source._id).populate('utilityId', 'name serviceAreaText website');
     const [enriched] = await withSourceCounts([populated]);
@@ -214,6 +307,18 @@ const deleteSource = async (req, res, next) => {
       return res.status(403).json({ message: 'Access denied' });
     }
 
+    // Delete associated projects from this source
+    await Project.deleteMany({ sourceId: source._id });
+
+    // Clean up uploaded file if it exists
+    if (source.storagePath && fs.existsSync(source.storagePath)) {
+      try {
+        fs.unlinkSync(source.storagePath);
+      } catch (unlinkErr) {
+        console.warn('Failed to delete uploaded file from disk:', unlinkErr.message);
+      }
+    }
+
     await source.deleteOne();
 
     await AuditEvent.create({
@@ -230,6 +335,88 @@ const deleteSource = async (req, res, next) => {
   }
 };
 
+// POST /api/sources/:id/extract
+// Re-runs Gemini AI Extraction Agent on a specific source
+const triggerSourceExtraction = async (req, res, next) => {
+  try {
+    const source = await DataSource.findById(req.params.id).populate('utilityId');
+    if (!source) return res.status(404).json({ message: 'Data source not found' });
+
+    if (source.utilityId?.ownerId?.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    source.parserStatus = 'processing';
+    await source.save();
+
+    const utility = source.utilityId;
+    let extracted = [];
+
+    try {
+      extracted = await extractProjectsWithGemini({
+        filePath: source.storagePath || undefined,
+        sourceType: source.sourceType,
+        utilityName: utility?.name || '',
+        serviceArea: utility?.serviceAreaText || '',
+      });
+
+      if (extracted && extracted.length > 0) {
+        // Clear previous projects from this source to avoid duplicates
+        await Project.deleteMany({ sourceId: source._id });
+
+        for (const p of extracted) {
+          await Project.create({
+            utilityId: source.utilityId._id,
+            sourceId: source._id,
+            name: p.name,
+            description: p.description || '',
+            projectType: p.projectType || '',
+            status: p.status || 'planned',
+            startDate: p.startDate ? new Date(p.startDate) : undefined,
+            endDate: p.endDate ? new Date(p.endDate) : undefined,
+            locationText: p.locationText || '',
+            corridorName: p.corridorName || '',
+            geometry: p.geometry || undefined,
+            locationConfidence: p.locationConfidence || 0.8,
+            extraction: p.extraction || { method: 'llm', confidence: 0.9 },
+            rawFields: p.rawFields || {},
+          });
+        }
+        source.parserStatus = 'completed';
+      } else {
+        source.parserStatus = 'completed';
+      }
+      await source.save();
+
+      await AuditEvent.create({
+        userId: req.user._id,
+        action: 'source.parsed',
+        resourceType: 'DataSource',
+        resourceId: source._id,
+        metadata: { name: source.name, extractedCount: extracted.length },
+      });
+
+      const populated = await DataSource.findById(source._id).populate('utilityId', 'name serviceAreaText website');
+      const [enriched] = await withSourceCounts([populated]);
+
+      res.json({
+        message: `Extracted ${extracted.length} projects successfully`,
+        totalExtracted: extracted.length,
+        source: enriched,
+      });
+    } catch (extractErr) {
+      source.parserStatus = 'failed';
+      await source.save();
+      return res.status(500).json({
+        message: 'AI Extraction failed',
+        error: extractErr.message,
+      });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getAllSources,
   getSourcesByUtility,
@@ -237,4 +424,5 @@ module.exports = {
   getSourceById,
   updateSource,
   deleteSource,
+  triggerSourceExtraction,
 };

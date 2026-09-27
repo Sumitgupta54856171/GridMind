@@ -64,9 +64,17 @@ export const sourcesApi = {
   // Get single source by ID
   getById: (id: string) => api.get<{ source: DataSource }>(`/sources/${id}`),
 
-  // Create source under a specific utility
-  createForUtility: (utilityId: string, data: CreateSourcePayload) =>
-    api.post<{ source: DataSource }>(`/utilities/${utilityId}/sources`, data),
+  // Create source under a specific utility (accepts JSON or FormData with file upload)
+  createForUtility: (utilityId: string, data: CreateSourcePayload | FormData) =>
+    api.post<{ source: DataSource }>(`/utilities/${utilityId}/sources`, data, {
+      headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+    }),
+
+  // Global create with utilityId in payload/FormData
+  create: (data: FormData | (CreateSourcePayload & { utilityId: string })) =>
+    api.post<{ source: DataSource }>('/sources', data, {
+      headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+    }),
 
   // Update source
   update: (id: string, data: UpdateSourcePayload) =>
@@ -74,4 +82,8 @@ export const sourcesApi = {
 
   // Delete source
   delete: (id: string) => api.delete<{ message: string }>(`/sources/${id}`),
+
+  // Re-run Gemini AI Extraction on source
+  triggerExtraction: (id: string) =>
+    api.post<{ message: string; totalExtracted: number; source: DataSource }>(`/sources/${id}/extract`),
 }

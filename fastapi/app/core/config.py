@@ -7,11 +7,15 @@ class Settings(BaseSettings):
     debug: bool = True
     environment: str = "development"
     express_url: str = "http://localhost:3001"
-    llm_provider: str = "openai"
+    project_id: str = "geometric-team-457805-j0"
+    gemini_location: str = "us-central1"
+    gemini_model: str = "gemini-2.5-flash"
+    llm_provider: str = "gemini"
     llm_api_key: str = ""
-    llm_model: str = "gpt-4o-mini"
+    llm_model: str = "gemini-2.5-flash"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
 settings = Settings()
+

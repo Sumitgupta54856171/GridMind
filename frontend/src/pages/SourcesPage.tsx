@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import {
   Database, Plus, Search, Filter, Loader2, X,
   LayoutGrid, Table as TableIcon, ExternalLink,
-  Eye, Pencil, Trash2, Building2,
+  Eye, Pencil, Trash2, Building2, Sparkles,
 } from 'lucide-react'
 import { AppShell } from '@/components/layout'
 import { Button } from '@/components/ui/button'
@@ -52,7 +52,7 @@ export default function SourcesPage() {
 
   // ── Create Mutation ──────────────────────────────────────────
   const createMutation = useMutation({
-    mutationFn: ({ utilityId, data }: { utilityId: string; data: CreateSourcePayload }) =>
+    mutationFn: ({ utilityId, data }: { utilityId: string; data: CreateSourcePayload | FormData }) =>
       sourcesApi.createForUtility(utilityId, data),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['sources'] })
@@ -111,6 +111,38 @@ export default function SourcesPage() {
       action: {
         label: 'Delete',
         onClick: () => deleteMutation.mutate(id),
+      },
+    })
+  }
+
+  // ── Extract Mutation ─────────────────────────────────────────
+  const extractMutation = useMutation({
+    mutationFn: (id: string) => sourcesApi.triggerExtraction(id),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['sources'] })
+      qc.invalidateQueries({ queryKey: ['utilities'] })
+      qc.invalidateQueries({ queryKey: ['projects'] })
+      toast.success(res.data.message || 'AI Extraction completed', {
+        description: `Extracted ${res.data.totalExtracted ?? 0} projects via Gemini AI Agent.`,
+      })
+      if (viewingSource && viewingSource._id === res.data.source?._id) {
+        setViewingSource(res.data.source)
+      }
+    },
+    onError: (err: unknown) => {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'Extraction failed.'
+      toast.error('AI Extraction Failed', { description: msg })
+    },
+  })
+
+  const handleExtract = (source: DataSource) => {
+    toast(`Run Gemini AI Extraction on "${source.name}"?`, {
+      description: 'The AI Agent will scan the document/dataset and extract all projects.',
+      action: {
+        label: 'Extract',
+        onClick: () => extractMutation.mutate(source._id),
       },
     })
   }
@@ -390,6 +422,14 @@ export default function SourcesPage() {
                         <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-1">
                             <button
+                              onClick={() => handleExtract(source)}
+                              disabled={source.parserStatus === 'processing'}
+                              className="p-1 rounded-md text-muted-foreground hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                              title="Extract projects with Gemini AI Agent"
+                            >
+                              <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                            </button>
+                            <button
                               onClick={() => setViewingSource(source)}
                               className="p-1 rounded-md text-muted-foreground hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
                               title="Inspect provenance"
@@ -429,6 +469,7 @@ export default function SourcesPage() {
                 onView={(s) => setViewingSource(s)}
                 onEdit={(s) => setEditingSource(s)}
                 onDelete={handleDelete}
+                onExtract={handleExtract}
               />
             ))}
           </div>
@@ -460,6 +501,7 @@ export default function SourcesPage() {
           source={viewingSource}
           onClose={() => setViewingSource(null)}
           onEdit={(s) => setEditingSource(s)}
+          onExtract={handleExtract}
         />
       )}
     </AppShell>

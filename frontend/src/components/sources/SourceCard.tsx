@@ -1,6 +1,6 @@
 import {
   Globe, Calendar, Trash2, ExternalLink, FolderOpen,
-  Building2, Eye, Pencil, Clock, CheckCircle2, AlertCircle, RefreshCw,
+  Building2, Eye, Pencil, Clock, CheckCircle2, AlertCircle, RefreshCw, Sparkles,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,7 @@ interface SourceCardProps {
   onView: (source: DataSource) => void
   onEdit: (source: DataSource) => void
   onDelete: (id: string) => void
+  onExtract?: (source: DataSource) => void
 }
 
 const TYPE_CONFIG: Record<SourceType, { label: string; badgeClass: string }> = {
@@ -30,7 +31,7 @@ const STATUS_CONFIG: Record<ParserStatus, { label: string; icon: React.Component
   failed: { label: 'Failed', icon: AlertCircle, badgeClass: 'bg-red-50 text-red-700 border-red-200' },
 }
 
-export function SourceCard({ source, onView, onEdit, onDelete }: SourceCardProps) {
+export function SourceCard({ source, onView, onEdit, onDelete, onExtract }: SourceCardProps) {
   const typeCfg = TYPE_CONFIG[source.sourceType] || TYPE_CONFIG.manual
   const statusCfg = STATUS_CONFIG[source.parserStatus] || STATUS_CONFIG.pending
   const StatusIcon = statusCfg.icon
@@ -120,6 +121,18 @@ export function SourceCard({ source, onView, onEdit, onDelete }: SourceCardProps
             <Eye className="w-3.5 h-3.5" />
             Inspect
           </Button>
+
+          {onExtract && (
+            <Button
+              size="sm"
+              className="h-8 text-xs gap-1.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white"
+              onClick={() => onExtract(source)}
+              title="Run Gemini AI extraction to discover projects"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              AI Extract
+            </Button>
+          )}
 
           {source.sourceUrl && (
             <a

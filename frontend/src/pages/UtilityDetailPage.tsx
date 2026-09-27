@@ -16,6 +16,7 @@ import {
   Pencil,
   Trash2,
   Eye,
+  Sparkles,
 } from 'lucide-react'
 import { Loader2 } from 'lucide-react'
 import { AppShell } from '@/components/layout'
@@ -97,7 +98,7 @@ export default function UtilityDetailPage() {
 
   // ── Create Source mutation ────────────────────────────────────
   const createSourceMutation = useMutation({
-    mutationFn: (data: CreateSourcePayload) => sourcesApi.createForUtility(id!, data),
+    mutationFn: (data: CreateSourcePayload | FormData) => sourcesApi.createForUtility(id!, data),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['sources'] })
       qc.invalidateQueries({ queryKey: ['sources', 'utility', id] })
@@ -167,6 +168,40 @@ export default function UtilityDetailPage() {
       action: {
         label: 'Delete',
         onClick: () => deleteSourceMutation.mutate(sourceId),
+      },
+    })
+  }
+
+  // ── Extract Source mutation ───────────────────────────────────
+  const extractSourceMutation = useMutation({
+    mutationFn: (sourceId: string) => sourcesApi.triggerExtraction(sourceId),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['sources'] })
+      qc.invalidateQueries({ queryKey: ['sources', 'utility', id] })
+      qc.invalidateQueries({ queryKey: ['utility', id] })
+      qc.invalidateQueries({ queryKey: ['utilities'] })
+      qc.invalidateQueries({ queryKey: ['projects'] })
+      toast.success(res.data.message || 'AI Extraction completed', {
+        description: `Extracted ${res.data.totalExtracted ?? 0} projects via Gemini AI.`,
+      })
+      if (viewingSource && viewingSource._id === res.data.source?._id) {
+        setViewingSource(res.data.source)
+      }
+    },
+    onError: (err: unknown) => {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'Extraction failed.'
+      toast.error('AI Extraction Failed', { description: message })
+    },
+  })
+
+  const handleExtractSource = (source: DataSource) => {
+    toast(`Run Gemini AI Extraction on "${source.name}"?`, {
+      description: 'The AI Agent will scan the document/dataset and extract all projects.',
+      action: {
+        label: 'Extract',
+        onClick: () => extractSourceMutation.mutate(source._id),
       },
     })
   }
@@ -431,6 +466,17 @@ export default function UtilityDetailPage() {
                         <Button
                           variant="outline"
                           size="sm"
+                          className="h-7 text-xs px-2 gap-1 text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+                          disabled={src.parserStatus === 'processing'}
+                          onClick={() => handleExtractSource(src)}
+                          title="Extract projects with Gemini AI Agent"
+                        >
+                          <Sparkles className="w-3 h-3 text-indigo-500" />
+                          Extract
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           className="h-7 text-xs px-2 gap-1"
                           onClick={() => setViewingSource(src)}
                         >
@@ -557,6 +603,7 @@ export default function UtilityDetailPage() {
           source={viewingSource}
           onClose={() => setViewingSource(null)}
           onEdit={(s) => setEditingSource(s)}
+          onExtract={handleExtractSource}
         />
       )}
     </AppShell>

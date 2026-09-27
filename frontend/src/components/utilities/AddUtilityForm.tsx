@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { LocationPickerMap } from '@/components/map/LocationPickerMap'
 
 interface AddUtilityFormProps {
   onSubmit: (data: {
@@ -22,9 +23,23 @@ export function AddUtilityForm({ onSubmit, onCancel, isLoading }: AddUtilityForm
   const [description, setDescription] = useState('')
   const [website, setWebsite] = useState('')
   const [serviceAreaText, setServiceAreaText] = useState('')
+  const [polygonCoords, setPolygonCoords] = useState<number[][][] | undefined>(undefined)
   const [showGeoInput, setShowGeoInput] = useState(false)
   const [geoJsonText, setGeoJsonText] = useState('')
   const [geoError, setGeoError] = useState('')
+
+  const handleLocationSelect = (data: {
+    center: [number, number]
+    polygonCoordinates?: number[][][]
+    label?: string
+  }) => {
+    if (data.polygonCoordinates) {
+      setPolygonCoords(data.polygonCoordinates)
+    }
+    if (data.label && (!serviceAreaText || serviceAreaText.trim() === '')) {
+      setServiceAreaText(data.label)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,6 +63,8 @@ export function AddUtilityForm({ onSubmit, onCancel, isLoading }: AddUtilityForm
         setGeoError('Invalid JSON format for coordinates.')
         return
       }
+    } else if (polygonCoords) {
+      parsedGeo = { type: 'Polygon', coordinates: polygonCoords }
     }
 
     try {
@@ -64,15 +81,18 @@ export function AddUtilityForm({ onSubmit, onCancel, isLoading }: AddUtilityForm
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <Card className="w-full max-w-md shadow-2xl border-border/60 animate-in fade-in zoom-in-95 duration-200">
-        <CardHeader className="pb-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto">
+      <Card className="w-full max-w-xl my-6 shadow-2xl border-border/60 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+        <CardHeader className="pb-3 border-b border-border/50 shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center">
                 <Building2 className="w-5 h-5 text-blue-600" />
               </div>
-              <CardTitle className="text-base">Add Utility</CardTitle>
+              <div>
+                <CardTitle className="text-base font-semibold">Add Utility Organisation</CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">Register a public or private utility agency</p>
+              </div>
             </div>
             <button
               onClick={onCancel}
@@ -82,57 +102,67 @@ export function AddUtilityForm({ onSubmit, onCancel, isLoading }: AddUtilityForm
             </button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-y-auto p-5 space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="util-name" className="text-sm font-medium">
-                Utility name <span className="text-red-500">*</span>
+            <div className="space-y-1.5">
+              <Label htmlFor="util-name" className="text-xs font-semibold">
+                Utility Name <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="util-name"
-                placeholder="e.g. City Water Authority"
+                placeholder="e.g. Austin Water or City Energy"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
                 autoFocus
-                className="h-10 border-border/60 focus-visible:ring-blue-500/50 focus-visible:border-blue-500"
+                className="h-9 text-xs border-border/60 focus-visible:ring-blue-500/50 focus-visible:border-blue-500"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="util-desc" className="text-sm font-medium">
+            <div className="space-y-1.5">
+              <Label htmlFor="util-desc" className="text-xs font-semibold">
                 Description
               </Label>
               <textarea
                 id="util-desc"
-                placeholder="Brief description of this utility organisation…"
+                placeholder="Scope of work, jurisdiction, or infrastructure type…"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 resize-none transition-colors"
+                rows={2}
+                className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 resize-none transition-colors"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="util-service-area" className="text-sm font-medium">
-                Service area
+            <div className="space-y-1.5">
+              <Label htmlFor="util-service-area" className="text-xs font-semibold">
+                Service Region Name
                 <span className="text-muted-foreground font-normal ml-1">(city, region or county)</span>
               </Label>
               <Input
                 id="util-service-area"
                 type="text"
-                placeholder="e.g. Austin Metro, Travis County"
+                placeholder="e.g. Austin Metro, Satna Central, or Travis County"
                 value={serviceAreaText}
                 onChange={(e) => setServiceAreaText(e.target.value)}
-                className="h-10 border-border/60 focus-visible:ring-blue-500/50 focus-visible:border-blue-500"
+                className="h-9 text-xs border-border/60 focus-visible:ring-blue-500/50 focus-visible:border-blue-500"
               />
-              <div className="flex items-center justify-between pt-1">
+            </div>
+
+            {/* Interactive Free OpenStreetMap Location & Polygon Picker */}
+            <div className="space-y-1.5">
+              <LocationPickerMap
+                onLocationSelect={handleLocationSelect}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => setShowGeoInput((v) => !v)}
                   className="text-xs text-blue-600 hover:text-blue-700 hover:underline font-medium"
                 >
-                  {showGeoInput ? '— Hide GIS Polygon' : '+ Add GeoJSON Polygon (optional)'}
+                  {showGeoInput ? '— Hide Manual Raw GeoJSON' : '+ Advanced: Paste Raw GeoJSON Polygon'}
                 </button>
               </div>
               {showGeoInput && (
@@ -148,33 +178,33 @@ export function AddUtilityForm({ onSubmit, onCancel, isLoading }: AddUtilityForm
                       setGeoJsonText(e.target.value)
                       setGeoError('')
                     }}
-                    rows={3}
-                    className="w-full font-mono text-xs rounded-md border border-border/60 bg-background px-3 py-2 placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    rows={2}
+                    className="w-full font-mono text-[11px] rounded-md border border-border/60 bg-background px-3 py-2 placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                   {geoError && <p className="text-xs text-red-500">{geoError}</p>}
                 </div>
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="util-website" className="text-sm font-medium">
-                Website
+            <div className="space-y-1.5">
+              <Label htmlFor="util-website" className="text-xs font-semibold">
+                Official Website
               </Label>
               <Input
                 id="util-website"
                 type="url"
-                placeholder="https://example.com"
+                placeholder="https://example.gov"
                 value={website}
                 onChange={(e) => setWebsite(e.target.value)}
-                className="h-10 border-border/60 focus-visible:ring-blue-500/50 focus-visible:border-blue-500"
+                className="h-9 text-xs border-border/60 focus-visible:ring-blue-500/50 focus-visible:border-blue-500"
               />
             </div>
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-3 pt-3 border-t border-border/50">
               <Button
                 type="button"
                 variant="outline"
-                className="flex-1"
+                className="flex-1 text-xs h-9"
                 onClick={onCancel}
                 disabled={isLoading}
               >
@@ -182,7 +212,7 @@ export function AddUtilityForm({ onSubmit, onCancel, isLoading }: AddUtilityForm
               </Button>
               <Button
                 type="submit"
-                className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+                className="flex-1 text-xs h-9 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
                 disabled={isLoading || !name.trim()}
               >
                 {isLoading ? (
