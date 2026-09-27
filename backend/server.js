@@ -23,6 +23,8 @@ const authRoutes = require('./src/modules/auth/auth.routes');
 const utilityRoutes = require('./src/modules/utilities/utility.routes');
 const sourceRoutes = require('./src/modules/sources/source.routes');
 const projectRoutes = require('./src/modules/projects/project.routes');
+const analysisRoutes = require('./src/modules/analyses/analysis.routes');
+const conflictRoutes = require('./src/modules/conflicts/conflict.routes');
 
 const app = express();
 
@@ -48,6 +50,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/utilities', utilityRoutes);
 app.use('/api/sources', sourceRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/analyses', analysisRoutes);
+app.use('/api/conflicts', conflictRoutes);
 
 
 // ── Error handler (must be last) ──────────────────────────────

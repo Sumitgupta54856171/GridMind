@@ -7,6 +7,8 @@ import UtilityDetailPage from '@/pages/UtilityDetailPage'
 import SourcesPage from '@/pages/SourcesPage'
 import MapPage from '@/pages/MapPage'
 import ProjectsPage from '@/pages/ProjectsPage'
+import AnalysesPage from '@/pages/AnalysesPage'
+import ConflictsPage from '@/pages/ConflictsPage'
 import { AppShell } from '@/components/layout'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -49,8 +51,8 @@ function App() {
                 <Route path="/utilities/:id/import" element={<ComingSoon title="Import Projects" subtitle="Coming in Project Import phase" />} />
                 <Route path="/map" element={<MapPage />} />
                 <Route path="/projects" element={<ProjectsPage />} />
-                <Route path="/analyses" element={<ComingSoon title="Analyses" subtitle="Run and manage analyses" />} />
-                <Route path="/conflicts" element={<ComingSoon title="Conflicts" subtitle="Detected conflict opportunities" />} />
+                <Route path="/analyses" element={<AnalysesPage />} />
+                <Route path="/conflicts" element={<ConflictsPage />} />
                 <Route path="/ai" element={<ComingSoon title="AI Control Center" subtitle="Privacy, model and cost controls" />} />
                 <Route path="/sources" element={<SourcesPage />} />
                 <Route path="/settings" element={<ComingSoon title="Settings" />} />
