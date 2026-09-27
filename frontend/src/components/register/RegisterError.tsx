@@ -7,8 +7,8 @@ interface RegisterErrorProps {
 export function RegisterError({ message }: RegisterErrorProps) {
   if (!message) return null
   return (
-    <div className="flex items-center gap-2 rounded-md bg-destructive/10 border border-destructive/20 px-3 py-2 text-sm text-destructive">
-      <AlertCircle className="h-4 w-4 shrink-0" />
+    <div className="flex items-start gap-3 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+      <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-red-500" />
       <span>{message}</span>
     </div>
   )

@@ -20,6 +20,8 @@ const errorHandler = require('./src/middleware/errorHandler');
 
 // Route modules
 const authRoutes = require('./src/modules/auth/auth.routes');
+const utilityRoutes = require('./src/modules/utilities/utility.routes');
+const sourceRoutes = require('./src/modules/sources/source.routes');
 
 const app = express();
 
@@ -42,6 +44,9 @@ app.use('/api', limiter);
 // ── Routes ────────────────────────────────────────────────────
 app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'gridmind-backend' }));
 app.use('/api/auth', authRoutes);
+app.use('/api/utilities', utilityRoutes);
+app.use('/api/sources', sourceRoutes);
+
 
 // ── Error handler (must be last) ──────────────────────────────
 app.use(errorHandler);
