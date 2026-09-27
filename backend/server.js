@@ -1,4 +1,14 @@
 require('dotenv').config();
+
+// ── Env guard ─────────────────────────────────────────────────
+const REQUIRED_ENV = ['MONGODB_URI', 'JWT_SECRET'];
+for (const key of REQUIRED_ENV) {
+  if (!process.env[key]) {
+    console.error(`[FATAL] Missing required environment variable: ${key}`);
+    process.exit(1);
+  }
+}
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
