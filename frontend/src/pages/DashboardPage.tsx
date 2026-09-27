@@ -157,7 +157,7 @@ export default function DashboardPage() {
 
               {latestAnalysis ? (
                 <div className="space-y-4">
-                  <div className="p-3 bg-muted/30 border border-border rounded-lg flex items-center justify-between gap-3 text-xs">
+                  <div className="p-3 bg-white border border-border rounded-lg flex items-center justify-between gap-3 text-xs shadow-xs">
                     <div className="flex items-center gap-2 flex-wrap">
                       {latestAnalysis.utilityIds?.map((u: any, idx: number) => (
                         <span key={u._id || idx} className="flex items-center gap-1 font-semibold text-foreground">
@@ -176,19 +176,19 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="grid grid-cols-3 gap-3 text-center">
-                    <div className="bg-background border border-border rounded-lg p-2.5">
+                    <div className="bg-white border border-border rounded-lg p-2.5 shadow-xs">
                       <div className="text-base font-bold text-foreground">
                         {metrics.projects}
                       </div>
                       <div className="text-[11px] text-muted-foreground mt-0.5">Projects Compared</div>
                     </div>
-                    <div className="bg-background border border-border rounded-lg p-2.5">
+                    <div className="bg-white border border-border rounded-lg p-2.5 shadow-xs">
                       <div className="text-base font-bold text-amber-600">
                         {metrics.conflicts}
                       </div>
                       <div className="text-[11px] text-muted-foreground mt-0.5">Conflicts Detected</div>
                     </div>
-                    <div className="bg-background border border-border rounded-lg p-2.5">
+                    <div className="bg-white border border-border rounded-lg p-2.5 shadow-xs">
                       <div className="text-base font-bold text-red-600">
                         {metrics.highPriority}
                       </div>
@@ -287,7 +287,7 @@ export default function DashboardPage() {
               </div>
               <button
                 onClick={() => navigate('/ai')}
-                className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border border-border bg-muted/40 hover:bg-muted transition text-foreground"
+                className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border border-border bg-white hover:bg-slate-50 transition text-foreground shadow-xs"
               >
                 Open AI Control Center
                 <ArrowRight className="w-3.5 h-3.5" />

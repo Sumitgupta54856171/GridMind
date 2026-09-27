@@ -14,6 +14,15 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_model: str = "gemini-2.5-flash"
 
+    # Fireworks AI Fallback Configuration (LangChain)
+    fireworrks_api_key: str = ""
+    fireworks_api_key: str = ""
+    fireworks_model: str = "accounts/fireworks/models/minimax-m3"
+
+    @property
+    def effective_fireworks_api_key(self) -> str:
+        return (self.fireworrks_api_key or self.fireworks_api_key or "").strip()
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

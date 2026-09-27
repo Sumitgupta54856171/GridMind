@@ -10,11 +10,21 @@ export function Topbar({ title, subtitle }: TopbarProps) {
   const user = useAppSelector((s) => s.auth.user)
 
   return (
-    <header className="flex items-center justify-between h-16 px-6 border-b border-border bg-background shrink-0">
-      {/* Left: page title */}
-      <div>
-        <h1 className="text-base font-semibold text-foreground leading-tight">{title}</h1>
-        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+    <header className="flex items-center justify-between h-16 px-4 sm:px-6 border-b border-border bg-white shrink-0">
+      {/* Left: mobile logo & page title */}
+      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+        <div className="flex md:hidden items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 shadow-xs shrink-0">
+          <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+          </svg>
+        </div>
+        <div className="min-w-0">
+          <h1 className="text-sm sm:text-base font-semibold text-foreground leading-tight truncate">{title}</h1>
+          {subtitle && <p className="text-[11px] sm:text-xs text-muted-foreground truncate hidden sm:block">{subtitle}</p>}
+        </div>
       </div>
 
       {/* Right: actions */}

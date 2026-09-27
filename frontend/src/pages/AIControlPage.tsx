@@ -217,18 +217,18 @@ export default function AIControlPage() {
               </div>
             ) : (
               <div className="mt-3 space-y-3">
-                <div className="bg-card/70 border border-border/60 rounded-lg p-3 text-xs leading-relaxed text-foreground">
+                <div className="bg-white border border-border rounded-lg p-3 text-xs leading-relaxed text-foreground shadow-xs">
                   <div className="font-semibold text-foreground mb-1">AI Recommendation Summary:</div>
                   {testResult.recommendation?.summary}
                 </div>
-                <div className="bg-card/70 border border-border/60 rounded-lg p-3 text-xs leading-relaxed text-muted-foreground">
+                <div className="bg-white border border-border rounded-lg p-3 text-xs leading-relaxed text-muted-foreground shadow-xs">
                   <div className="font-semibold text-foreground mb-1">Operational Impact:</div>
                   {testResult.recommendation?.whyItMatters}
                 </div>
                 {testResult.recommendation?.recommendedActions && (
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                     {testResult.recommendation.recommendedActions.map((act: any, idx: number) => (
-                      <div key={idx} className="bg-background border border-border rounded p-2.5">
+                      <div key={idx} className="bg-white border border-border rounded p-2.5 shadow-xs">
                         <div className="font-semibold text-foreground flex items-center justify-between">
                           <span>{act.action}</span>
                           <span className="text-[10px] uppercase font-bold text-primary">{act.priority}</span>
@@ -377,7 +377,7 @@ export default function AIControlPage() {
                 Telemetry & Model Toggles
               </div>
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-2.5 rounded-lg border border-border/60 bg-background/50">
+                <div className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-white shadow-xs">
                   <div>
                     <div className="font-medium text-xs text-foreground">Redact Sensitive Fields</div>
                     <div className="text-[11px] text-muted-foreground">Generalize names & coordinates</div>
@@ -393,7 +393,7 @@ export default function AIControlPage() {
                   </label>
                 </div>
 
-                <div className="flex items-center justify-between p-2.5 rounded-lg border border-border/60 bg-background/50">
+                <div className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-white shadow-xs">
                   <div>
                     <div className="font-medium text-xs text-foreground">Use Lower-Cost Model</div>
                     <div className="text-[11px] text-muted-foreground">Gemini Lite · ~4× cheaper per request</div>
@@ -409,7 +409,7 @@ export default function AIControlPage() {
                   </label>
                 </div>
 
-                <div className="flex items-center justify-between p-2.5 rounded-lg border border-border/60 bg-background/50">
+                <div className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-white shadow-xs">
                   <div>
                     <div className="font-medium text-xs text-foreground">Show Cost Estimates</div>
                     <div className="text-[11px] text-muted-foreground">Display token costs across UI</div>

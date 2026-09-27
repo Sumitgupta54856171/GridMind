@@ -53,8 +53,10 @@ async function generateConflictRecommendation({
       timeout: 30000,
     });
 
-    const recommendation = res.data?.recommendation;
+    const recommendation = res.data?.recommendation || {};
     const telemetry = res.data?.telemetry || {};
+    recommendation.provider = telemetry.provider || 'Google Vertex AI';
+    recommendation.model = telemetry.model || (lowCost ? 'gemini-2.5-flash-lite' : 'gemini-2.5-flash');
 
     // Persist AI Request audit log in MongoDB
     if (userId) {

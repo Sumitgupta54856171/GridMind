@@ -555,7 +555,7 @@ export default function UtilityDetailPage() {
             {hasGeoPolygon && (
               <div className="pt-2 border-t border-border/50">
                 <p className="text-xs font-medium text-muted-foreground mb-1">GIS Coordinates (GeoJSON Polygon):</p>
-                <div className="p-2.5 rounded-lg bg-muted/50 font-mono text-[11px] text-muted-foreground overflow-x-auto max-h-28">
+                <div className="p-2.5 rounded-lg bg-white border border-slate-200 font-mono text-[11px] text-muted-foreground overflow-x-auto max-h-28">
                   {JSON.stringify(utility.serviceArea?.coordinates)}
                 </div>
               </div>

@@ -2,8 +2,8 @@
 
 @layer base {
   :root {
-    /* ── Neutral base ── */
-    --background: 220 20% 97%;
+    /* ── Neutral base: Pure clean white ── */
+    --background: 0 0% 100%;
     --foreground: 222 47% 8%;
 
     --card: 0 0% 100%;

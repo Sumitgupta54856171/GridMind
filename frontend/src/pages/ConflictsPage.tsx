@@ -122,19 +122,19 @@ export default function ConflictsPage() {
             <span className="text-[10px] text-muted-foreground">Detected across runs</span>
           </div>
 
-          <div className="p-3.5 rounded-xl border border-rose-200 bg-rose-50/40 flex flex-col gap-0.5 shadow-xs">
+          <div className="p-3.5 rounded-xl border border-rose-200 bg-white flex flex-col gap-0.5 shadow-xs">
             <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700">High Priority</span>
             <span className="text-2xl font-bold font-mono text-rose-700">{summaryCounts.high}</span>
             <span className="text-[10px] text-rose-600">Immediate coordination required</span>
           </div>
 
-          <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/40 flex flex-col gap-0.5 shadow-xs">
+          <div className="p-3.5 rounded-xl border border-amber-200 bg-white flex flex-col gap-0.5 shadow-xs">
             <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700">Medium Priority</span>
             <span className="text-2xl font-bold font-mono text-amber-700">{summaryCounts.medium}</span>
             <span className="text-[10px] text-amber-600">Sequencing review recommended</span>
           </div>
 
-          <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col gap-0.5 shadow-xs">
+          <div className="p-3.5 rounded-xl border border-slate-200 bg-white flex flex-col gap-0.5 shadow-xs">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Low Priority</span>
             <span className="text-2xl font-bold font-mono text-slate-700">{summaryCounts.low}</span>
             <span className="text-[10px] text-slate-500">Monitor schedule drift</span>
@@ -163,14 +163,14 @@ export default function ConflictsPage() {
         </div>
 
         {/* Search Bar */}
-        <div className="p-3.5 rounded-xl border border-border/60 bg-card flex flex-col md:flex-row items-center gap-3">
+        <div className="p-3.5 rounded-xl border border-border bg-white flex flex-col md:flex-row items-center gap-3 shadow-xs">
           <div className="relative flex-1 w-full">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search by project title, corridor, or utility…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-8 h-9 text-xs border-border/60 bg-background/50 focus-visible:ring-indigo-500/50"
+              className="pl-9 pr-8 h-9 text-xs border border-border bg-white text-foreground focus-visible:ring-indigo-500/50 shadow-xs"
             />
             {searchQuery && (
               <button
@@ -186,7 +186,7 @@ export default function ConflictsPage() {
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="h-9 rounded-md border border-border/60 bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="h-9 rounded-md border border-border bg-white px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500"
             >
               <option value="all">All Review Statuses</option>
               <option value="new">New</option>
@@ -253,14 +253,14 @@ export default function ConflictsPage() {
 
                   {/* Metric Chips */}
                   <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-muted-foreground pt-1 border-t border-border/40">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-muted/60 font-mono font-medium text-foreground">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white border border-slate-200 font-mono font-medium text-foreground">
                       {c.spatial.distanceMeters} m apart
                     </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-muted/60 font-mono font-medium text-foreground">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white border border-slate-200 font-mono font-medium text-foreground">
                       {c.temporal.overlapDays}-day overlap
                     </span>
                     {pA?.corridorName && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-muted/60 text-muted-foreground truncate max-w-[160px]">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white border border-slate-200 text-muted-foreground truncate max-w-[160px]">
                         📍 {pA.corridorName}
                       </span>
                     )}
@@ -268,7 +268,7 @@ export default function ConflictsPage() {
 
                   {/* AI Recommendation Summary Preview */}
                   {c.recommendation?.summary && (
-                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed bg-indigo-50/30 p-2 rounded-lg border border-indigo-100/60">
+                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed bg-white p-2 rounded-lg border border-slate-200">
                       💡 {c.recommendation.summary}
                     </p>
                   )}

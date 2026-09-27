@@ -69,7 +69,7 @@ export function UtilityCard({ utility, onEdit, onDelete }: UtilityCardProps) {
 
         {/* ── Stats grid: Projects / Sources / Service area / Updated ── */}
         <div className="grid grid-cols-2 gap-2">
-          <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-muted/60">
+          <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-white border border-slate-200">
             <FolderOpen className="w-3.5 h-3.5 text-blue-500 shrink-0" />
             <div>
               <p className="text-xs font-semibold text-foreground leading-none">{utility.projectsCount}</p>
@@ -77,7 +77,7 @@ export function UtilityCard({ utility, onEdit, onDelete }: UtilityCardProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-muted/60">
+          <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-white border border-slate-200">
             <Database className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
             <div>
               <p className="text-xs font-semibold text-foreground leading-none">{utility.sourcesCount}</p>
@@ -85,7 +85,7 @@ export function UtilityCard({ utility, onEdit, onDelete }: UtilityCardProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-muted/60 col-span-2">
+          <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-white border border-slate-200 col-span-2">
             <MapPin className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
             <p className="text-xs text-muted-foreground truncate" title={utility.serviceAreaText || (utility.serviceArea?.coordinates?.length ? 'GeoJSON Polygon Defined' : 'No service area set')}>
               {utility.serviceAreaText ||

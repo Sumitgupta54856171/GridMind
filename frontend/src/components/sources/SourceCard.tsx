@@ -93,7 +93,7 @@ export function SourceCard({ source, onView, onEdit, onDelete, onExtract }: Sour
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-2 mt-auto pt-2 border-t border-border/40">
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/60">
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-slate-200">
             <FolderOpen className="w-3.5 h-3.5 text-blue-500 shrink-0" />
             <div>
               <p className="text-xs font-semibold text-foreground leading-none">{source.projectsCount}</p>
@@ -101,7 +101,7 @@ export function SourceCard({ source, onView, onEdit, onDelete, onExtract }: Sour
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/60">
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-slate-200">
             <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
             <div>
               <p className="text-xs font-medium text-foreground leading-none truncate">{formattedDate}</p>

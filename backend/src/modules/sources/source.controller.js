@@ -4,7 +4,8 @@ const DataSource = require('../../models/DataSource');
 const Utility = require('../../models/Utility');
 const Project = require('../../models/Project');
 const AuditEvent = require('../../models/AuditEvent');
-const { extractProjectsWithGemini } = require('../../services/aiExtractor');
+const { extractSourceProjects } = require('../../services/sourceExtractionService');
+
 
 /**
  * Computes sha256 checksum of a file on disk.
@@ -167,12 +168,11 @@ const createSourceForUtility = async (req, res, next) => {
         source.parserStatus = 'processing';
         await source.save();
 
-        const extracted = await extractProjectsWithGemini({
-          filePath: storagePath || undefined,
-          sourceType: resolvedType,
-          utilityName: utility.name,
-          serviceArea: utility.serviceAreaText || '',
+        const extracted = await extractSourceProjects({
+          source,
+          utility,
         });
+
 
         if (extracted && extracted.length > 0) {
           for (const p of extracted) {
@@ -353,12 +353,11 @@ const triggerSourceExtraction = async (req, res, next) => {
     let extracted = [];
 
     try {
-      extracted = await extractProjectsWithGemini({
-        filePath: source.storagePath || undefined,
-        sourceType: source.sourceType,
-        utilityName: utility?.name || '',
-        serviceArea: utility?.serviceAreaText || '',
+      extracted = await extractSourceProjects({
+        source,
+        utility,
       });
+
 
       if (extracted && extracted.length > 0) {
         // Clear previous projects from this source to avoid duplicates

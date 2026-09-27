@@ -1,9 +1,19 @@
 import json
 import logging
+import re
+import time
 from typing import Dict, Any, List
 from google import genai
 from google.genai import types
 from app.core.config import settings
+
+try:
+    from langchain_fireworks import ChatFireworks
+    from langchain_core.messages import SystemMessage, HumanMessage
+except ImportError:
+    ChatFireworks = None
+    SystemMessage = None
+    HumanMessage = None
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +49,73 @@ class GeminiRecommender:
             logger.error(f"Failed to initialize GeminiRecommender client: {e}")
             self.client = None
 
+    def _parse_json(self, raw_text: str) -> Any:
+        """Safely extracts JSON from model responses, handling codeblocks and thinking tags."""
+        text = (raw_text or "").strip()
+        if "```json" in text:
+            text = text.split("```json", 1)[1]
+            if "```" in text:
+                text = text.split("```", 1)[0]
+        elif "```" in text:
+            text = text.split("```", 1)[1]
+            if "```" in text:
+                text = text.split("```", 1)[0]
+
+        # Strip reasoning tags if present
+        text = re.sub(r"<think>[\s\S]*?</think>", "", text).strip()
+
+        try:
+            return json.loads(text.strip())
+        except Exception:
+            obj_match = re.search(r"(\{[\s\S]*\})", text)
+            if obj_match:
+                return json.loads(obj_match.group(1))
+            raise
+
+    def _call_fireworks_recommendation(
+        self,
+        prompt: str,
+        start_time: float,
+        privacy_mode: str,
+        model_tier: str,
+        redacted_fields: List[str],
+    ) -> Dict[str, Any]:
+        """Synthesize AI recommendation using LangChain ChatFireworks with minimax-m3."""
+        api_key = settings.effective_fireworks_api_key
+        if not api_key:
+            raise RuntimeError("Fireworks AI API key is not configured (FIREWORRKS_API_KEY).")
+        if not ChatFireworks:
+            raise RuntimeError("langchain-fireworks is not installed.")
+
+        logger.info(f"[Fireworks AI Recommender] Invoking backup model '{settings.fireworks_model}' via LangChain...")
+        llm = ChatFireworks(
+            model=settings.fireworks_model,
+            fireworks_api_key=api_key,
+            temperature=0.2,
+        )
+        messages = [
+            SystemMessage(content=RECOMMENDATION_SYSTEM_PROMPT),
+            HumanMessage(content=prompt),
+        ]
+        response = llm.invoke(messages)
+        parsed = self._parse_json(response.content)
+
+        return {
+            "recommendation": parsed,
+            "telemetry": {
+                "provider": f"Fireworks AI ({settings.fireworks_model})",
+                "model": settings.fireworks_model,
+                "privacy_mode": privacy_mode,
+                "input_tokens": 360,
+                "output_tokens": 180,
+                "estimated_cost": 0.0015,
+                "latency_ms": int((time.time() - start_time) * 1000),
+                "redacted_fields": redacted_fields or [],
+                "model_tier": model_tier,
+                "backup_used": True,
+            },
+        }
+
     def generate_recommendation(
         self,
         project_a: Dict[str, Any],
@@ -53,7 +130,6 @@ class GeminiRecommender:
         """
         Synthesizes an AI coordination recommendation from grounded deterministic facts with privacy filtering.
         """
-        import time
         start_time = time.time()
 
         redacted_fields: List[str] = []
@@ -99,22 +175,43 @@ Description: {proj_b_data.get('description', 'N/A')}
 
 Synthesize the coordination recommendation JSON:"""
 
+        if model_tier == "fireworks":
+            return self._call_fireworks_recommendation(
+                prompt=prompt,
+                start_time=start_time,
+                privacy_mode=privacy_mode,
+                model_tier=model_tier,
+                redacted_fields=redacted_fields,
+            )
+
         if not self.client:
-            fb = self._fallback_recommendation(proj_a_data, proj_b_data, distance_meters, overlap_days, severity, active_corridor)
-            return {
-                "recommendation": fb,
-                "telemetry": {
-                    "provider": "Google Vertex AI (Fallback)",
-                    "model": model_to_use,
-                    "privacy_mode": privacy_mode,
-                    "input_tokens": 320,
-                    "output_tokens": 175,
-                    "estimated_cost": 0.002 if model_tier == "lite" else 0.008,
-                    "latency_ms": int((time.time() - start_time) * 1000),
-                    "redacted_fields": redacted_fields,
-                    "model_tier": model_tier,
+            logger.warning("[Conflict Recommendation] Gemini Client not configured. Invoking LangChain Fireworks AI fallback...")
+            try:
+                return self._call_fireworks_recommendation(
+                    prompt=prompt,
+                    start_time=start_time,
+                    privacy_mode=privacy_mode,
+                    model_tier=model_tier,
+                    redacted_fields=redacted_fields,
+                )
+            except Exception as fw_err:
+                logger.error(f"[Conflict Recommendation] Fireworks AI fallback failed: {fw_err}")
+                fb = self._fallback_recommendation(proj_a_data, proj_b_data, distance_meters, overlap_days, severity, active_corridor)
+                return {
+                    "recommendation": fb,
+                    "telemetry": {
+                        "provider": "Local Deterministic Synthesis",
+                        "model": "rule-based-engine",
+                        "privacy_mode": privacy_mode,
+                        "input_tokens": 0,
+                        "output_tokens": 0,
+                        "estimated_cost": 0.0,
+                        "latency_ms": int((time.time() - start_time) * 1000),
+                        "redacted_fields": redacted_fields,
+                        "model_tier": model_tier,
+                        "backup_used": True,
+                    },
                 }
-            }
 
         try:
             config = types.GenerateContentConfig(
@@ -129,15 +226,7 @@ Synthesize the coordination recommendation JSON:"""
                 config=config,
             )
 
-            raw = response.text.strip()
-            if raw.startswith("```json"):
-                raw = raw[7:]
-            if raw.startswith("```"):
-                raw = raw[3:]
-            if raw.endswith("```"):
-                raw = raw[:-3]
-
-            parsed = json.loads(raw.strip())
+            parsed = self._parse_json(response.text)
 
             input_tokens = 360
             output_tokens = 180
@@ -145,7 +234,6 @@ Synthesize the coordination recommendation JSON:"""
                 input_tokens = getattr(response.usage_metadata, "prompt_token_count", 360) or 360
                 output_tokens = getattr(response.usage_metadata, "candidates_token_count", 180) or 180
 
-            # Cost estimation: $0.002 for Lite, $0.008 for Standard per query estimate or token rate
             cost = 0.002 if model_tier == "lite" else 0.008
 
             return {
@@ -160,25 +248,38 @@ Synthesize the coordination recommendation JSON:"""
                     "latency_ms": int((time.time() - start_time) * 1000),
                     "redacted_fields": redacted_fields,
                     "model_tier": model_tier,
-                }
+                },
             }
         except Exception as e:
-            logger.error(f"Gemini recommendation synthesis error: {e}", exc_info=True)
-            fb = self._fallback_recommendation(proj_a_data, proj_b_data, distance_meters, overlap_days, severity, active_corridor)
-            return {
-                "recommendation": fb,
-                "telemetry": {
-                    "provider": "Google Vertex AI",
-                    "model": model_to_use,
-                    "privacy_mode": privacy_mode,
-                    "input_tokens": 340,
-                    "output_tokens": 160,
-                    "estimated_cost": 0.002 if model_tier == "lite" else 0.008,
-                    "latency_ms": int((time.time() - start_time) * 1000),
-                    "redacted_fields": redacted_fields,
-                    "model_tier": model_tier,
+            logger.warning(
+                f"[Conflict Recommendation Failover] Gemini failed ({e}). Switching seamlessly to LangChain Fireworks AI ({settings.fireworks_model})..."
+            )
+            try:
+                return self._call_fireworks_recommendation(
+                    prompt=prompt,
+                    start_time=start_time,
+                    privacy_mode=privacy_mode,
+                    model_tier=model_tier,
+                    redacted_fields=redacted_fields,
+                )
+            except Exception as fw_err:
+                logger.error(f"[Conflict Recommendation Failover] Fireworks AI fallback also failed: {fw_err}")
+                fb = self._fallback_recommendation(proj_a_data, proj_b_data, distance_meters, overlap_days, severity, active_corridor)
+                return {
+                    "recommendation": fb,
+                    "telemetry": {
+                        "provider": "Local Deterministic Synthesis",
+                        "model": "rule-based-engine",
+                        "privacy_mode": privacy_mode,
+                        "input_tokens": 0,
+                        "output_tokens": 0,
+                        "estimated_cost": 0.0,
+                        "latency_ms": int((time.time() - start_time) * 1000),
+                        "redacted_fields": redacted_fields,
+                        "model_tier": model_tier,
+                        "backup_used": True,
+                    },
                 }
-            }
 
     def _fallback_recommendation(
         self,

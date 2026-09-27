@@ -90,6 +90,83 @@ function getTypeConfig(type: string) {
   )
 }
 
+export function getProjectCenter(p: Project): [number, number] | null {
+  if (!p.geometry || !p.geometry.coordinates) return null
+  const { type, coordinates } = p.geometry
+
+  // 1. Point [lng, lat]
+  if ((type === 'Point' || !type) && Array.isArray(coordinates)) {
+    if (typeof coordinates[0] === 'number' && typeof coordinates[1] === 'number') {
+      return [coordinates[0], coordinates[1]]
+    }
+  }
+
+  // 2. LineString [[lng, lat], ...]
+  if (type === 'LineString' && Array.isArray(coordinates) && coordinates.length > 0) {
+    const mid = coordinates[Math.floor(coordinates.length / 2)] || coordinates[0]
+    if (Array.isArray(mid) && typeof mid[0] === 'number' && typeof mid[1] === 'number') {
+      return [mid[0], mid[1]]
+    }
+  }
+
+  // 3. Polygon [[[lng, lat], ...], ...]
+  if (type === 'Polygon' && Array.isArray(coordinates) && coordinates.length > 0) {
+    const ring = coordinates[0]
+    if (Array.isArray(ring) && ring.length > 0) {
+      let sumLng = 0
+      let sumLat = 0
+      let count = 0
+      for (const pt of ring) {
+        if (Array.isArray(pt) && typeof pt[0] === 'number' && typeof pt[1] === 'number') {
+          sumLng += pt[0]
+          sumLat += pt[1]
+          count++
+        }
+      }
+      if (count > 0) {
+        return [sumLng / count, sumLat / count]
+      }
+    }
+  }
+
+  // 4. MultiPolygon [[[[lng, lat], ...]]]]
+  if (type === 'MultiPolygon' && Array.isArray(coordinates) && coordinates.length > 0) {
+    const poly = coordinates[0]
+    if (Array.isArray(poly) && poly.length > 0) {
+      const ring = poly[0]
+      if (Array.isArray(ring) && ring.length > 0) {
+        let sumLng = 0
+        let sumLat = 0
+        let count = 0
+        for (const pt of ring) {
+          if (Array.isArray(pt) && typeof pt[0] === 'number' && typeof pt[1] === 'number') {
+            sumLng += pt[0]
+            sumLat += pt[1]
+            count++
+          }
+        }
+        if (count > 0) return [sumLng / count, sumLat / count]
+      }
+    }
+  }
+
+  // 5. Fallback recursive traversal
+  if (Array.isArray(coordinates)) {
+    if (typeof coordinates[0] === 'number' && typeof coordinates[1] === 'number') {
+      return [coordinates[0], coordinates[1]]
+    }
+    let cur: any = coordinates
+    while (Array.isArray(cur) && Array.isArray(cur[0])) {
+      cur = cur[0]
+    }
+    if (Array.isArray(cur) && typeof cur[0] === 'number' && typeof cur[1] === 'number') {
+      return [cur[0], cur[1]]
+    }
+  }
+
+  return null
+}
+
 export default function MapPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
@@ -141,14 +218,19 @@ export default function MapPage() {
       // Type filter
       if (selectedType !== 'all') {
         const pType = (p.projectType || '').toLowerCase()
-        if (selectedType === 'water' && !['water', 'wastewater', 'sewer'].includes(pType)) return false
+        if (selectedType === 'water' && !['water', 'wastewater', 'sewer', 'stormwater'].includes(pType)) return false
         if (selectedType === 'fiber' && !['fiber', 'telecom'].includes(pType)) return false
-        if (selectedType !== 'water' && selectedType !== 'fiber' && pType !== selectedType) return false
+        if (selectedType === 'electric' && !['electric', 'power'].includes(pType)) return false
+        if (selectedType === 'transportation' && !['transportation', 'road', 'street', 'paving'].includes(pType)) return false
+        if (selectedType !== 'water' && selectedType !== 'fiber' && selectedType !== 'electric' && selectedType !== 'transportation' && pType !== selectedType) return false
       }
 
-      // Utility filter
-      if (selectedUtility !== 'all' && p.utilityId?._id !== selectedUtility) {
-        return false
+      // Utility filter - safe comparison for both object and string utilityId
+      if (selectedUtility !== 'all') {
+        const uId = p.utilityId?._id || p.utilityId
+        if (String(uId) !== String(selectedUtility)) {
+          return false
+        }
       }
 
       // Date range filter
@@ -165,19 +247,11 @@ export default function MapPage() {
     })
   }, [projects, selectedType, selectedUtility, selectedDateRange])
 
-  // Mapped projects (have coordinates)
+  // Mapped projects (have valid coordinates in Point, LineString, or Polygon)
   const mappedProjects = useMemo(() => {
-    return filteredProjects.filter((p) => {
-      const coords = p.geometry?.coordinates
-      return (
-        coords &&
-        Array.isArray(coords) &&
-        coords.length >= 2 &&
-        typeof coords[0] === 'number' &&
-        typeof coords[1] === 'number'
-      )
-    })
+    return filteredProjects.filter((p) => getProjectCenter(p) !== null)
   }, [filteredProjects])
+
 
   // ── Initialize Leaflet Map ──────────────────────────────────────
   useEffect(() => {
@@ -190,12 +264,21 @@ export default function MapPage() {
       zoomControl: false,
     })
 
-    // OpenStreetMap free tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
+    // High-performance CARTO Voyager tile layer (Zero 429 rate-limiting, global CDN)
+    const tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      maxZoom: 20,
+      subdomains: 'abcd',
       attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
     }).addTo(map)
+
+    tileLayer.on('tileerror', (e) => {
+      const tile = e.tile as HTMLImageElement
+      if (tile && !tile.dataset.fallbackTried) {
+        tile.dataset.fallbackTried = 'true'
+        tile.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/${e.coords.z}/${e.coords.y}/${e.coords.x}`
+      }
+    })
 
     const markersLayer = L.layerGroup().addTo(map)
     markersLayerRef.current = markersLayer
@@ -225,13 +308,45 @@ export default function MapPage() {
     const bounds = L.latLngBounds([])
 
     mappedProjects.forEach((p) => {
-      const coords = p.geometry?.coordinates as [number, number]
-      if (!coords || typeof coords[0] !== 'number' || typeof coords[1] !== 'number') return
+      const center = getProjectCenter(p)
+      if (!center) return
 
-      const [lng, lat] = coords
+      const [lng, lat] = center
       const isSelected = selectedProject?._id === p._id
       const typeCfg = getTypeConfig(p.projectType)
       const utilColor = p.utilityId?.color || typeCfg.color
+
+      // Render vector overlay for Polygons and LineStrings
+      if (p.geometry?.type === 'Polygon' || p.geometry?.type === 'MultiPolygon') {
+        try {
+          const polyLayer = L.geoJSON(p.geometry as any, {
+            style: {
+              color: utilColor,
+              weight: isSelected ? 3.5 : 2,
+              fillColor: utilColor,
+              fillOpacity: isSelected ? 0.4 : 0.2,
+            },
+          })
+          polyLayer.on('click', () => setSelectedProject(p))
+          polyLayer.addTo(layer)
+        } catch {
+          // ignore geometry rendering errors
+        }
+      } else if (p.geometry?.type === 'LineString' || p.geometry?.type === 'MultiLineString') {
+        try {
+          const lineLayer = L.geoJSON(p.geometry as any, {
+            style: {
+              color: utilColor,
+              weight: isSelected ? 5 : 3,
+              opacity: 0.85,
+            },
+          })
+          lineLayer.on('click', () => setSelectedProject(p))
+          lineLayer.addTo(layer)
+        } catch {
+          // ignore geometry rendering errors
+        }
+      }
 
       // Create styled custom DivIcon matching build/ui.html design
       const customIcon = L.divIcon({
@@ -315,10 +430,12 @@ export default function MapPage() {
       const match = mappedProjects.find((p) => p._id === paramId)
       if (match) {
         setSelectedProject(match)
-        const coords = match.geometry?.coordinates as [number, number]
-        map.flyTo([coords[1], coords[0]], 15, { duration: 0.8 })
-        const m = markerMapRef.current.get(match._id)
-        if (m) m.openPopup()
+        const center = getProjectCenter(match)
+        if (center) {
+          map.flyTo([center[1], center[0]], 15, { duration: 0.8 })
+          const m = markerMapRef.current.get(match._id)
+          if (m) m.openPopup()
+        }
       }
     } else if (bounds.isValid() && mappedProjects.length > 0 && !selectedProject) {
       map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 })
@@ -331,9 +448,9 @@ export default function MapPage() {
     const map = mapInstanceRef.current
     if (!map) return
 
-    const coords = project.geometry?.coordinates as [number, number]
-    if (coords && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
-      map.flyTo([coords[1], coords[0]], 15, { duration: 0.8 })
+    const center = getProjectCenter(project)
+    if (center) {
+      map.flyTo([center[1], center[0]], 15, { duration: 0.8 })
       const m = markerMapRef.current.get(project._id)
       if (m) m.openPopup()
     }
@@ -346,8 +463,8 @@ export default function MapPage() {
     if (!mapInstanceRef.current) return
     const bounds = L.latLngBounds([])
     mappedProjects.forEach((p) => {
-      const coords = p.geometry?.coordinates as [number, number]
-      if (coords && coords.length >= 2) bounds.extend([coords[1], coords[0]])
+      const center = getProjectCenter(p)
+      if (center) bounds.extend([center[1], center[0]])
     })
     if (bounds.isValid()) {
       mapInstanceRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 })
@@ -356,6 +473,7 @@ export default function MapPage() {
     }
     setSelectedProject(null)
   }
+
 
   return (
     <AppShell
@@ -377,13 +495,13 @@ export default function MapPage() {
               className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${
                 selectedType === 'all'
                   ? 'bg-slate-900 text-white shadow-xs'
-                  : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
+                  : 'bg-white border border-slate-200 text-muted-foreground hover:bg-slate-50 hover:text-foreground'
               }`}
             >
               All Projects
               <span
                 className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                  selectedType === 'all' ? 'bg-slate-700 text-slate-100' : 'bg-muted-foreground/20 text-muted-foreground'
+                  selectedType === 'all' ? 'bg-slate-700 text-slate-100' : 'bg-slate-100 text-muted-foreground font-mono'
                 }`}
               >
                 {projects.length}
@@ -407,7 +525,7 @@ export default function MapPage() {
                     className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
                       isActive
                         ? `${cfg.bg} ${cfg.border} shadow-xs font-bold scale-[1.02]`
-                        : 'bg-background border-border/70 text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                        : 'bg-white border-border/70 text-muted-foreground hover:bg-slate-50 hover:text-foreground'
                     }`}
                   >
                     <span
@@ -418,7 +536,7 @@ export default function MapPage() {
                     <span>{cfg.label}</span>
                     <span
                       className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                        isActive ? 'bg-white/80 text-foreground font-mono' : 'bg-muted text-muted-foreground font-mono'
+                        isActive ? 'bg-white text-foreground font-mono shadow-xs' : 'bg-slate-100 text-muted-foreground font-mono'
                       }`}
                     >
                       {count}
@@ -467,7 +585,7 @@ export default function MapPage() {
         {/* ── MAP LAYOUT: Side Panel + Map Canvas ── */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-start">
           {/* Left Side: Projects Mini List */}
-          <div className="lg:col-span-1 space-y-3">
+          <div className="lg:col-span-1 space-y-3 order-2 lg:order-1">
             <Card className="border-border/60 p-3.5 flex flex-col gap-3">
               <div className="flex items-center justify-between pb-2 border-b border-border/40">
                 <div className="flex items-center gap-2">
@@ -505,8 +623,8 @@ export default function MapPage() {
                         onClick={() => handleSelectProject(p)}
                         className={`w-full text-left p-2.5 rounded-lg border transition-all flex flex-col gap-1 ${
                           isSelected
-                            ? 'bg-indigo-50/70 border-indigo-300 shadow-xs'
-                            : 'bg-background hover:bg-muted/50 border-border/60'
+                            ? 'bg-indigo-50 border-indigo-300 shadow-xs'
+                            : 'bg-white hover:bg-slate-50 border-slate-200'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-1">
@@ -544,7 +662,7 @@ export default function MapPage() {
             </Card>
 
             {/* Quick Map Legend */}
-            <Card className="border-border/60 p-3 bg-muted/20 text-xs space-y-2">
+            <Card className="border border-slate-200 p-3 bg-white text-xs space-y-2">
               <span className="font-semibold text-foreground text-[11px] uppercase tracking-wider block">
                 Map Symbology
               </span>
@@ -570,14 +688,14 @@ export default function MapPage() {
           </div>
 
           {/* Right Main Map Canvas */}
-          <div className="lg:col-span-3 space-y-3">
-            <div className="relative rounded-2xl border border-border/80 overflow-hidden shadow-xs bg-[#edf0ee]">
+          <div className="lg:col-span-3 space-y-3 order-1 lg:order-2">
+            <div className="relative rounded-2xl border border-border overflow-hidden shadow-xs bg-white">
               {/* Map Controls */}
-              <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5 bg-white/90 backdrop-blur-sm p-1 rounded-xl shadow-md border border-border/60">
+              <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5 bg-white p-1 rounded-xl shadow-md border border-border">
                 <button
                   type="button"
                   onClick={handleZoomIn}
-                  className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center text-foreground transition-colors"
+                  className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-foreground transition-colors"
                   title="Zoom In"
                 >
                   <Plus className="w-4 h-4" />
@@ -585,7 +703,7 @@ export default function MapPage() {
                 <button
                   type="button"
                   onClick={handleZoomOut}
-                  className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center text-foreground transition-colors"
+                  className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-foreground transition-colors"
                   title="Zoom Out"
                 >
                   <Minus className="w-4 h-4" />
@@ -593,7 +711,7 @@ export default function MapPage() {
                 <button
                   type="button"
                   onClick={handleResetView}
-                  className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center text-foreground transition-colors"
+                  className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-foreground transition-colors"
                   title="Reset View"
                 >
                   <Locate className="w-4 h-4" />
@@ -603,12 +721,12 @@ export default function MapPage() {
               {/* Free OpenStreetMap Canvas */}
               <div
                 ref={mapContainerRef}
-                className="w-full h-[540px] z-0"
-                style={{ minHeight: '500px' }}
+                className="w-full h-[380px] sm:h-[500px] lg:h-[540px] z-0 bg-white"
+                style={{ minHeight: '320px' }}
               />
 
               {/* Active count badge in bottom left */}
-              <div className="absolute bottom-3 left-3 z-10 bg-white/90 backdrop-blur-sm border border-border/60 rounded-lg px-3 py-1.5 text-xs text-muted-foreground shadow-sm flex items-center gap-2">
+              <div className="absolute bottom-3 left-3 z-10 bg-white border border-border rounded-lg px-3 py-1.5 text-xs text-muted-foreground shadow-sm flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="font-semibold text-foreground">{mappedProjects.length}</span> projects plotted
                 on Free OpenStreetMap tiles
@@ -617,7 +735,7 @@ export default function MapPage() {
 
             {/* ── BOTTOM SELECTED PROJECT BAR (as in build/ui.html conflictBar) ── */}
             {selectedProject ? (
-              <Card className="border-indigo-200 bg-indigo-50/40 p-4 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-150">
+              <Card className="border border-border bg-white p-4 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-150">
                 <div className="flex items-center justify-between gap-4 flex-wrap">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shrink-0">

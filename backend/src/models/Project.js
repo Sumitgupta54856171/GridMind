@@ -18,7 +18,7 @@ const projectSchema = new mongoose.Schema(
     locationText: { type: String, default: '' },
     corridorName: { type: String, default: '' },
     geometry: {
-      type: { type: String, enum: ['LineString', 'Polygon', 'Point'] },
+      type: { type: String, enum: ['LineString', 'Polygon', 'Point', 'MultiPolygon', 'MultiLineString'] },
       coordinates: { type: mongoose.Schema.Types.Mixed },
     },
     locationConfidence: { type: Number, default: 0 },

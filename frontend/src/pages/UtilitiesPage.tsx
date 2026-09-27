@@ -128,7 +128,7 @@ export default function UtilitiesPage() {
               placeholder="Search by name, region or description…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-9 h-9 text-xs border-border/60 bg-background/50 focus-visible:ring-blue-500/50"
+              className="pl-9 pr-9 h-9 text-xs border border-border bg-white text-foreground focus-visible:ring-blue-500/50 shadow-xs"
             />
             {searchQuery && (
               <button

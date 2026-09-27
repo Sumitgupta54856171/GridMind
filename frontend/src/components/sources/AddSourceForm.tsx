@@ -124,9 +124,9 @@ export function AddSourceForm({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-150 overflow-y-auto">
-      <Card className="w-full max-w-lg shadow-2xl border-border/60 animate-in zoom-in-95 duration-200 my-8">
-        <CardHeader className="pb-3 border-b border-border/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-150 overflow-y-auto">
+      <Card className="w-full max-w-lg shadow-2xl border border-border bg-white animate-in zoom-in-95 duration-200 my-8">
+        <CardHeader className="pb-3 border-b border-border bg-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
@@ -154,7 +154,7 @@ export function AddSourceForm({
             {initialUtilityId ? (
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Target Utility Organisation</Label>
-                <div className="p-2.5 rounded-md bg-muted/40 border border-border/50 text-xs font-semibold text-foreground flex items-center justify-between">
+                <div className="p-2.5 rounded-md bg-white border border-slate-200 text-xs font-semibold text-foreground flex items-center justify-between">
                   <span>{initialUtilityName || 'Selected Utility'}</span>
                   <Badge variant="secondary" className="text-[10px]">Pre-selected</Badge>
                 </div>
@@ -204,12 +204,12 @@ export function AddSourceForm({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-medium">Data Ingestion Method</Label>
-                <div className="inline-flex rounded-md border border-border/60 bg-muted/30 p-0.5 text-xs">
+                <div className="inline-flex rounded-md border border-border bg-white p-0.5 text-xs shadow-xs">
                   <button
                     type="button"
                     onClick={() => setUploadMode('file')}
                     className={`px-2.5 py-1 rounded text-xs transition-colors flex items-center gap-1 ${
-                      uploadMode === 'file' ? 'bg-background shadow-xs font-medium text-foreground' : 'text-muted-foreground hover:text-foreground'
+                      uploadMode === 'file' ? 'bg-slate-100 shadow-xs font-medium text-foreground' : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     <Upload className="w-3 h-3" />
@@ -219,7 +219,7 @@ export function AddSourceForm({
                     type="button"
                     onClick={() => setUploadMode('url')}
                     className={`px-2.5 py-1 rounded text-xs transition-colors flex items-center gap-1 ${
-                      uploadMode === 'url' ? 'bg-background shadow-xs font-medium text-foreground' : 'text-muted-foreground hover:text-foreground'
+                      uploadMode === 'url' ? 'bg-slate-100 shadow-xs font-medium text-foreground' : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     <Link2 className="w-3 h-3" />
@@ -238,12 +238,12 @@ export function AddSourceForm({
                   onDragLeave={() => setIsDragging(false)}
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
-                  className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all ${
+                  className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all bg-white ${
                     isDragging
-                      ? 'border-indigo-500 bg-indigo-50/50'
+                      ? 'border-indigo-500 bg-indigo-50'
                       : selectedFile
-                      ? 'border-emerald-300 bg-emerald-50/30'
-                      : 'border-border/80 hover:border-indigo-300 hover:bg-muted/30'
+                      ? 'border-emerald-300 bg-emerald-50'
+                      : 'border-border hover:border-indigo-300 hover:bg-slate-50'
                   }`}
                 >
                   <input
@@ -356,12 +356,12 @@ export function AddSourceForm({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={2}
-                className="w-full rounded-md border border-border/60 bg-background px-3 py-1.5 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-none"
+                className="w-full rounded-md border border-border bg-white px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-none"
               />
             </div>
 
             {/* AI Agent Auto-Extraction Feature Box */}
-            <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-3 flex items-start gap-2.5">
+            <div className="rounded-xl border border-border bg-white p-3 flex items-start gap-2.5 shadow-xs">
               <input
                 id="auto-extract"
                 type="checkbox"

@@ -124,13 +124,13 @@ export default function ProjectsPage() {
             </Button>
 
             {/* View toggle */}
-            <div className="inline-flex rounded-lg border border-border/60 bg-muted/30 p-0.5">
+            <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5">
               <button
                 type="button"
                 onClick={() => setViewMode('table')}
                 className={`p-1.5 rounded-md text-xs transition-colors ${
                   viewMode === 'table'
-                    ? 'bg-background shadow-xs text-foreground font-medium'
+                    ? 'bg-slate-100 shadow-xs text-foreground font-medium'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
                 title="Table view"
@@ -142,7 +142,7 @@ export default function ProjectsPage() {
                 onClick={() => setViewMode('cards')}
                 className={`p-1.5 rounded-md text-xs transition-colors ${
                   viewMode === 'cards'
-                    ? 'bg-background shadow-xs text-foreground font-medium'
+                    ? 'bg-slate-100 shadow-xs text-foreground font-medium'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
                 title="Cards view"
@@ -171,13 +171,13 @@ export default function ProjectsPage() {
                 className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
                   isActive
                     ? 'bg-slate-900 border-slate-900 text-white shadow-xs'
-                    : 'bg-card border-border/70 text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                    : 'bg-white border border-slate-200 text-muted-foreground hover:bg-slate-50 hover:text-foreground'
                 }`}
               >
                 <span>{chip.label}</span>
                 <span
                   className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                    isActive ? 'bg-slate-700 text-slate-100' : 'bg-muted text-muted-foreground font-mono'
+                    isActive ? 'bg-slate-700 text-slate-100' : 'bg-slate-100 text-muted-foreground font-mono'
                   }`}
                 >
                   {chip.count}
@@ -188,7 +188,7 @@ export default function ProjectsPage() {
         </div>
 
         {/* ── Filters bar ── */}
-        <div className="p-3.5 rounded-xl border border-border/60 bg-card flex flex-col md:flex-row items-center gap-3">
+        <div className="p-3.5 rounded-xl border border-border bg-white flex flex-col md:flex-row items-center gap-3 shadow-xs">
           {/* Search */}
           <div className="relative flex-1 w-full">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -196,7 +196,7 @@ export default function ProjectsPage() {
               placeholder="Search by project name, corridor, location, or utility…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-8 h-9 text-xs border-border/60 bg-background/50 focus-visible:ring-indigo-500/50"
+              className="pl-9 pr-8 h-9 text-xs border border-border bg-white text-foreground focus-visible:ring-indigo-500/50"
             />
             {searchQuery && (
               <button
@@ -215,7 +215,7 @@ export default function ProjectsPage() {
               <select
                 value={selectedUtility}
                 onChange={(e) => setSelectedUtility(e.target.value)}
-                className="w-full h-9 rounded-md border border-border/60 bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full h-9 rounded-md border border-border bg-white px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
                 <option value="all">All Utilities</option>
                 {utilities.map((u) => (
@@ -232,7 +232,7 @@ export default function ProjectsPage() {
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full h-9 rounded-md border border-border/60 bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full h-9 rounded-md border border-border bg-white px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
                 <option value="all">All Statuses</option>
                 <option value="planned">Planned</option>
@@ -308,7 +308,8 @@ export default function ProjectsPage() {
                     const hasCoords =
                       p.geometry?.coordinates &&
                       Array.isArray(p.geometry.coordinates) &&
-                      p.geometry.coordinates.length >= 2
+                      p.geometry.coordinates.length > 0
+
 
                     const windowStr = p.startDate
                       ? `${new Date(p.startDate).toLocaleDateString(undefined, {
@@ -402,7 +403,8 @@ export default function ProjectsPage() {
               const hasCoords =
                 p.geometry?.coordinates &&
                 Array.isArray(p.geometry.coordinates) &&
-                p.geometry.coordinates.length >= 2
+                p.geometry.coordinates.length > 0
+
 
               return (
                 <Card key={p._id} className="border-border/60 hover:border-indigo-200 transition-all flex flex-col p-4 gap-3">

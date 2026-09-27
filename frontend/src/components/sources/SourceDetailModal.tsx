@@ -46,8 +46,8 @@ export function SourceDetailModal({ source, onClose, onEdit, onExtract }: Source
   })
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-150">
-      <Card className="w-full max-w-lg shadow-2xl border-border/60 animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-150">
+      <Card className="w-full max-w-lg shadow-2xl border-border/60 bg-white animate-in zoom-in-95 duration-200">
         <CardHeader className="pb-3 border-b border-border/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -86,7 +86,7 @@ export function SourceDetailModal({ source, onClose, onEdit, onExtract }: Source
           </div>
 
           {/* Provenance grid */}
-          <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-muted/40 border border-border/50 text-xs">
+          <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-white border border-slate-200 text-xs">
             <div>
               <p className="text-muted-foreground mb-0.5 flex items-center gap-1">
                 <Building2 className="w-3 h-3" /> Utility
@@ -120,7 +120,7 @@ export function SourceDetailModal({ source, onClose, onEdit, onExtract }: Source
               <p className="text-muted-foreground font-medium flex items-center gap-1">
                 <FileText className="w-3.5 h-3.5 text-indigo-500" /> Uploaded Document
               </p>
-              <div className="flex items-center justify-between p-2 rounded-md bg-indigo-50/50 border border-indigo-100 text-foreground text-xs">
+              <div className="flex items-center justify-between p-2 rounded-md bg-white border border-slate-200 text-foreground text-xs">
                 <span className="font-mono text-[11px] truncate">{source.storagePath.split('/').pop()}</span>
                 {source.checksum && (
                   <Badge variant="outline" className="text-[9px] font-mono text-muted-foreground border-border/60">
@@ -139,7 +139,7 @@ export function SourceDetailModal({ source, onClose, onEdit, onExtract }: Source
                 href={source.sourceUrl.startsWith('http') ? source.sourceUrl : `https://${source.sourceUrl}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-blue-600 hover:underline font-mono text-[11px] break-all p-2 rounded-md bg-blue-50/60 border border-blue-100"
+                className="flex items-center gap-1.5 text-blue-600 hover:underline font-mono text-[11px] break-all p-2 rounded-md bg-white border border-slate-200"
               >
                 <Globe className="w-3.5 h-3.5 shrink-0" />
                 <span className="flex-1 truncate">{source.sourceUrl}</span>

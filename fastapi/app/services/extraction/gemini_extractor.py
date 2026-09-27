@@ -7,6 +7,14 @@ from google import genai
 from google.genai import types
 from app.core.config import settings
 
+try:
+    from langchain_fireworks import ChatFireworks
+    from langchain_core.messages import SystemMessage, HumanMessage
+except ImportError:
+    ChatFireworks = None
+    SystemMessage = None
+    HumanMessage = None
+
 logger = logging.getLogger(__name__)
 
 EXTRACTION_SYSTEM_PROMPT = """You are GridMind's Infrastructure Project Extraction AI Agent.
@@ -79,8 +87,9 @@ class GeminiExtractor:
         pdf_bytes: bytes,
         utility_name: str = "",
         service_area: str = "",
+        provider: str = "auto",
     ) -> List[Dict[str, Any]]:
-        """Extracts projects from a PDF document using Gemini AI."""
+        """Extracts projects from a PDF document using Gemini AI or Fireworks backup."""
         pdf_text = self._extract_text_from_pdf(pdf_bytes)
 
         prompt = f"""Utility Organization: {utility_name or 'Public Utility'}
@@ -91,6 +100,8 @@ DOCUMENT TEXT:
 
 Extract all utility construction projects from this document into a structured JSON array. Do not miss any projects."""
 
+        if provider == "fireworks":
+            return self._call_fireworks(prompt)
         return self._call_gemini(prompt)
 
     def extract_from_text(
@@ -99,8 +110,9 @@ Extract all utility construction projects from this document into a structured J
         source_type: str = "text",
         utility_name: str = "",
         service_area: str = "",
+        provider: str = "auto",
     ) -> List[Dict[str, Any]]:
-        """Extracts projects from CSV, JSON, or plain text content using Gemini AI."""
+        """Extracts projects from CSV, JSON, or plain text content using Gemini AI or Fireworks backup."""
         prompt = f"""Utility Organization: {utility_name or 'Public Utility'}
 Service Area / Region: {service_area or 'Municipal Area'}
 Source Format: {source_type.upper()}
@@ -110,11 +122,70 @@ DATA CONTENT:
 
 Extract all utility construction projects from this data into a structured JSON array. Do not miss any projects."""
 
+        if provider == "fireworks":
+            return self._call_fireworks(prompt)
         return self._call_gemini(prompt)
+
+    def _parse_json(self, raw_text: str) -> Any:
+        """Safely extracts JSON from model responses, handling codeblocks and thinking tags."""
+        text = (raw_text or "").strip()
+        if "```json" in text:
+            text = text.split("```json", 1)[1]
+            if "```" in text:
+                text = text.split("```", 1)[0]
+        elif "```" in text:
+            text = text.split("```", 1)[1]
+            if "```" in text:
+                text = text.split("```", 1)[0]
+
+        # Strip reasoning tags if present
+        text = re.sub(r"<think>[\s\S]*?</think>", "", text).strip()
+
+        try:
+            return json.loads(text.strip())
+        except Exception:
+            # Fallback regex search for outermost array or object
+            arr_match = re.search(r"(\[[\s\S]*\])", text)
+            if arr_match:
+                return json.loads(arr_match.group(1))
+            obj_match = re.search(r"(\{[\s\S]*\})", text)
+            if obj_match:
+                return json.loads(obj_match.group(1))
+            raise
+
+    def _call_fireworks(self, user_prompt: str) -> List[Dict[str, Any]]:
+        """Fallback project extraction using LangChain and Fireworks AI minimax-m3."""
+        api_key = settings.effective_fireworks_api_key
+        if not api_key:
+            raise RuntimeError("Fireworks AI API key is not configured (FIREWORRKS_API_KEY).")
+        if not ChatFireworks:
+            raise RuntimeError("langchain-fireworks is not installed.")
+
+        logger.info(f"[Fireworks AI Extractor] Invoking backup model '{settings.fireworks_model}' via LangChain...")
+        llm = ChatFireworks(
+            model=settings.fireworks_model,
+            fireworks_api_key=api_key,
+            temperature=0.1,
+        )
+        messages = [
+            SystemMessage(content=EXTRACTION_SYSTEM_PROMPT),
+            HumanMessage(content=user_prompt),
+        ]
+        response = llm.invoke(messages)
+        parsed = self._parse_json(response.content)
+
+        provider_tag = f"Fireworks AI ({settings.fireworks_model})"
+        if isinstance(parsed, list):
+            return self._normalize_projects(parsed, extraction_provider=provider_tag)
+        elif isinstance(parsed, dict) and "projects" in parsed:
+            return self._normalize_projects(parsed["projects"], extraction_provider=provider_tag)
+        else:
+            return []
 
     def _call_gemini(self, user_prompt: str) -> List[Dict[str, Any]]:
         if not self.client:
-            raise RuntimeError("Gemini Client is not configured. Check PROJECT_ID in .env.")
+            logger.warning("Gemini Client is not configured. Invoking LangChain Fireworks AI fallback...")
+            return self._call_fireworks(user_prompt)
 
         try:
             config = types.GenerateContentConfig(
@@ -129,27 +200,28 @@ Extract all utility construction projects from this data into a structured JSON 
                 config=config,
             )
 
-            raw_text = response.text.strip()
-            # Clean possible markdown block markers if model included them
-            if raw_text.startswith("```json"):
-                raw_text = raw_text[7:]
-            if raw_text.startswith("```"):
-                raw_text = raw_text[3:]
-            if raw_text.endswith("```"):
-                raw_text = raw_text[:-3]
-
-            parsed = json.loads(raw_text.strip())
+            parsed = self._parse_json(response.text)
             if isinstance(parsed, list):
-                return self._normalize_projects(parsed)
+                return self._normalize_projects(parsed, extraction_provider="Google Vertex AI")
             elif isinstance(parsed, dict) and "projects" in parsed:
-                return self._normalize_projects(parsed["projects"])
+                return self._normalize_projects(parsed["projects"], extraction_provider="Google Vertex AI")
             else:
                 return []
         except Exception as e:
-            logger.error(f"Gemini project extraction failed: {e}", exc_info=True)
-            raise e
+            logger.warning(
+                f"[Extraction Failover] Google Gemini failed: {e}. Switching seamlessly to LangChain Fireworks AI ({settings.fireworks_model})..."
+            )
+            try:
+                return self._call_fireworks(user_prompt)
+            except Exception as fw_err:
+                logger.error(f"[Extraction Failover] Fireworks AI fallback also failed: {fw_err}")
+                raise e
 
-    def _normalize_projects(self, projects: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _normalize_projects(
+        self,
+        projects: List[Dict[str, Any]],
+        extraction_provider: str = "Google Vertex AI",
+    ) -> List[Dict[str, Any]]:
         normalized = []
         for p in projects:
             if not isinstance(p, dict) or not p.get("name"):
@@ -195,6 +267,8 @@ Extract all utility construction projects from this data into a structured JSON 
                 "locationConfidence": float(p.get("confidence", 0.8)),
                 "extraction": {
                     "method": "llm",
+                    "provider": extraction_provider,
+                    "model": settings.fireworks_model if "Fireworks" in extraction_provider else settings.gemini_model,
                     "confidence": float(p.get("confidence", 0.9)),
                 },
                 "rawFields": {k: v for k, v in p.items() if k not in ["name", "description", "geometry"]},

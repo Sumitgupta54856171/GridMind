@@ -50,10 +50,10 @@ export function ConflictDetailModal({
       : 'bg-slate-100 text-slate-700 border-slate-200'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-sm p-4 overflow-y-auto">
-      <Card className="w-full max-w-3xl my-6 shadow-2xl border-border/60 animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+      <Card className="w-full max-w-3xl my-6 shadow-2xl border border-border bg-white animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[92vh]">
         {/* Header */}
-        <CardHeader className="pb-3 border-b border-border/50 shrink-0">
+        <CardHeader className="pb-3 border-b border-border shrink-0 bg-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600">
@@ -84,11 +84,11 @@ export function ConflictDetailModal({
         </CardHeader>
 
         {/* Content */}
-        <CardContent className="overflow-y-auto p-5 space-y-4 text-xs">
+        <CardContent className="overflow-y-auto p-5 space-y-4 text-xs bg-white">
           {/* Side-by-Side Project Comparison (Screen 13 in build/ui.html) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Project A */}
-            <div className="p-3.5 rounded-xl border border-border/70 bg-muted/20 space-y-2">
+            <div className="p-3.5 rounded-xl border border-border bg-white space-y-2 shadow-xs">
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
                 <span className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">
@@ -112,7 +112,7 @@ export function ConflictDetailModal({
             </div>
 
             {/* Project B */}
-            <div className="p-3.5 rounded-xl border border-border/70 bg-muted/20 space-y-2">
+            <div className="p-3.5 rounded-xl border border-border bg-white space-y-2 shadow-xs">
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-600" />
                 <span className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">
@@ -175,7 +175,7 @@ export function ConflictDetailModal({
 
           {/* AI Coordination Recommendations (Gemini Agent) */}
           {rec && (
-            <div className="p-4 rounded-xl border border-indigo-200 bg-indigo-50/30 space-y-3">
+            <div className="p-4 rounded-xl border border-border bg-white space-y-3 shadow-xs">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-indigo-600" />
                 <span className="font-bold text-xs text-foreground">
@@ -196,13 +196,13 @@ export function ConflictDetailModal({
 
               {/* Recommended Actions */}
               {rec.recommendedActions && rec.recommendedActions.length > 0 && (
-                <div className="space-y-2 pt-1 border-t border-indigo-100">
+                <div className="space-y-2 pt-1 border-t border-border">
                   <h5 className="font-semibold text-xs text-foreground">Recommended Coordination Actions</h5>
                   <div className="space-y-1.5">
                     {rec.recommendedActions.map((act, i) => (
                       <div
                         key={i}
-                        className="p-2.5 rounded-lg border border-border/60 bg-background flex flex-col gap-0.5"
+                        className="p-2.5 rounded-lg border border-border bg-white flex flex-col gap-0.5 shadow-xs"
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-xs text-foreground flex items-center gap-1.5">
@@ -243,7 +243,7 @@ export function ConflictDetailModal({
             </h5>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
               {evidence.map((ev, i) => (
-                <div key={i} className="p-2 rounded-lg border border-border/60 bg-muted/20 space-y-0.5">
+                <div key={i} className="p-2 rounded-lg border border-border bg-white space-y-0.5 shadow-xs">
                   <span className="font-semibold text-foreground uppercase tracking-wider text-[9px] block text-muted-foreground">
                     {ev.evidenceType.replace(/_/g, ' ')}
                   </span>

@@ -66,8 +66,8 @@ export function EditSourceForm({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-150">
-      <Card className="w-full max-w-lg shadow-2xl border-border/60 animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-150">
+      <Card className="w-full max-w-lg shadow-2xl border-border/60 bg-white animate-in zoom-in-95 duration-200">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -94,7 +94,7 @@ export function EditSourceForm({
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Utility Organisation</Label>
-              <div className="p-2.5 rounded-md bg-muted/50 border border-border/50 text-sm font-medium text-foreground">
+              <div className="p-2.5 rounded-md bg-white border border-slate-200 text-sm font-medium text-foreground">
                 {source.utilityId?.name || 'Assigned Utility'}
               </div>
             </div>
@@ -122,7 +122,7 @@ export function EditSourceForm({
                   id="edit-source-type"
                   value={sourceType}
                   onChange={(e) => setSourceType(e.target.value as SourceType)}
-                  className="w-full h-10 rounded-md border border-border/60 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  className="w-full h-10 rounded-md border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                 >
                   {SOURCE_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>
@@ -140,7 +140,7 @@ export function EditSourceForm({
                   id="edit-parser-status"
                   value={parserStatus}
                   onChange={(e) => setParserStatus(e.target.value as ParserStatus)}
-                  className="w-full h-10 rounded-md border border-border/60 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  className="w-full h-10 rounded-md border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                 >
                   {PARSER_STATUSES.map((s) => (
                     <option key={s.value} value={s.value}>
@@ -160,7 +160,7 @@ export function EditSourceForm({
                 type="url"
                 value={sourceUrl}
                 onChange={(e) => setSourceUrl(e.target.value)}
-                className="h-10 border-border/60 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500"
+                className="h-10 border-border/60 bg-white focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500"
               />
             </div>
 
@@ -172,7 +172,7 @@ export function EditSourceForm({
                 id="edit-source-publisher"
                 value={publisher}
                 onChange={(e) => setPublisher(e.target.value)}
-                className="h-10 border-border/60 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500"
+                className="h-10 border-border/60 bg-white focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500"
               />
             </div>
 
@@ -185,7 +185,7 @@ export function EditSourceForm({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={2}
-                className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none transition-colors"
+                className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none transition-colors"
               />
             </div>
 

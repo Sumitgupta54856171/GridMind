@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { LocationPickerMap } from '@/components/map/LocationPickerMap'
 import type { Utility, UpdateUtilityPayload } from '@/api/utilities'
 
 interface EditUtilityFormProps {
@@ -20,33 +19,12 @@ export function EditUtilityForm({ utility, onSubmit, onCancel, isLoading }: Edit
   const [website, setWebsite] = useState(utility.website || '')
   const [serviceAreaText, setServiceAreaText] = useState(utility.serviceAreaText || '')
 
-  // Initial center from existing polygon coordinates
-  const initialCenter: [number, number] | undefined =
-    utility.serviceArea?.coordinates?.[0]?.[0]
-      ? [utility.serviceArea.coordinates[0][0][0], utility.serviceArea.coordinates[0][0][1]]
-      : undefined
-
-  const [polygonCoords, setPolygonCoords] = useState<number[][][] | undefined>(
-    utility.serviceArea?.coordinates
-  )
+  const polygonCoords = utility.serviceArea?.coordinates
   const [showGeoInput, setShowGeoInput] = useState(false)
   const [geoJsonText, setGeoJsonText] = useState(
     utility.serviceArea ? JSON.stringify(utility.serviceArea) : ''
   )
   const [geoError, setGeoError] = useState('')
-
-  const handleLocationSelect = (data: {
-    center: [number, number]
-    polygonCoordinates?: number[][][]
-    label?: string
-  }) => {
-    if (data.polygonCoordinates) {
-      setPolygonCoords(data.polygonCoordinates)
-    }
-    if (data.label && (!serviceAreaText || serviceAreaText.trim() === '')) {
-      setServiceAreaText(data.label)
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -90,8 +68,8 @@ export function EditUtilityForm({ utility, onSubmit, onCancel, isLoading }: Edit
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto">
-      <Card className="w-full max-w-xl my-6 shadow-2xl border-border/60 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+      <Card className="w-full max-w-xl my-6 shadow-2xl border-border/60 bg-white animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
         <CardHeader className="pb-3 border-b border-border/50 shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -139,32 +117,26 @@ export function EditUtilityForm({ utility, onSubmit, onCancel, isLoading }: Edit
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={2}
-                className="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 resize-none transition-colors"
+                className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 resize-none transition-colors"
               />
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="edit-util-service-area" className="text-xs font-semibold">
-                Service Region Name
-                <span className="text-muted-foreground font-normal ml-1">(city, region or county)</span>
+                Service Region / Location Name
+                <span className="text-muted-foreground font-normal ml-1">(city, region, or municipality)</span>
               </Label>
               <Input
                 id="edit-util-service-area"
                 type="text"
-                placeholder="e.g. Austin Metro, Travis County"
+                placeholder="e.g. Satna, MP or Austin Metro"
                 value={serviceAreaText}
                 onChange={(e) => setServiceAreaText(e.target.value)}
                 className="h-9 text-xs border-border/60 focus-visible:ring-blue-500/50 focus-visible:border-blue-500"
               />
-            </div>
-
-            {/* Interactive Free OpenStreetMap Location & Polygon Picker */}
-            <div className="space-y-1.5">
-              <LocationPickerMap
-                initialCenter={initialCenter}
-                initialCoordinates={utility.serviceArea?.coordinates}
-                onLocationSelect={handleLocationSelect}
-              />
+              <p className="text-[11px] text-muted-foreground">
+                Enter the municipality, city, or district name this utility agency serves.
+              </p>
             </div>
 
             <div className="space-y-1.5">
@@ -178,7 +150,7 @@ export function EditUtilityForm({ utility, onSubmit, onCancel, isLoading }: Edit
                 </button>
               </div>
               {showGeoInput && (
-                <div className="space-y-1.5 p-3 rounded-lg bg-muted/40 border border-border/60 animate-in fade-in duration-150">
+                <div className="space-y-1.5 p-3 rounded-lg bg-white border border-slate-200 animate-in fade-in duration-150">
                   <Label htmlFor="edit-util-geojson" className="text-xs text-muted-foreground">
                     GeoJSON Polygon coordinates or object:
                   </Label>
@@ -190,7 +162,7 @@ export function EditUtilityForm({ utility, onSubmit, onCancel, isLoading }: Edit
                       setGeoError('')
                     }}
                     rows={2}
-                    className="w-full font-mono text-[11px] rounded-md border border-border/60 bg-background px-3 py-2 placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full font-mono text-[11px] rounded-md border border-slate-200 bg-white px-3 py-2 placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                   {geoError && <p className="text-xs text-red-500">{geoError}</p>}
                 </div>

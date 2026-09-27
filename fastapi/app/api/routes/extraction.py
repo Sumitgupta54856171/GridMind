@@ -11,6 +11,7 @@ async def extract_projects_endpoint(
     source_type: str = Form("pdf"),
     utility_name: str = Form(""),
     service_area: str = Form(""),
+    provider: str = Form("auto"),
 ):
     """
     Extracts structured projects from uploaded files (PDF, CSV, JSON) or text using Gemini AI Agent.
@@ -25,6 +26,7 @@ async def extract_projects_endpoint(
                     pdf_bytes=content_bytes,
                     utility_name=utility_name,
                     service_area=service_area,
+                    provider=provider,
                 )
             else:
                 try:
@@ -37,6 +39,7 @@ async def extract_projects_endpoint(
                     source_type=source_type,
                     utility_name=utility_name,
                     service_area=service_area,
+                    provider=provider,
                 )
         elif text_content:
             projects = gemini_extractor.extract_from_text(
@@ -44,6 +47,7 @@ async def extract_projects_endpoint(
                 source_type=source_type,
                 utility_name=utility_name,
                 service_area=service_area,
+                provider=provider,
             )
         else:
             raise HTTPException(status_code=400, detail="Either file or text_content must be provided.")

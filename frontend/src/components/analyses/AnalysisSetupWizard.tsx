@@ -74,10 +74,10 @@ export function AnalysisSetupWizard({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-sm p-4 overflow-y-auto">
-      <Card className="w-full max-w-2xl my-6 shadow-2xl border-border/60 animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+      <Card className="w-full max-w-2xl my-6 shadow-2xl border border-border bg-white animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[92vh]">
         {/* Header */}
-        <CardHeader className="pb-3 border-b border-border/50 shrink-0">
+        <CardHeader className="pb-3 border-b border-border shrink-0 bg-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
@@ -156,8 +156,8 @@ export function AnalysisSetupWizard({
                       onClick={() => toggleUtility(u._id)}
                       className={`p-3.5 rounded-xl border text-left transition-all relative flex flex-col gap-1.5 ${
                         isSelected
-                          ? 'border-indigo-500 bg-indigo-50/50 shadow-xs ring-1 ring-indigo-500/20'
-                          : 'border-border/70 hover:border-border hover:bg-muted/30 bg-background'
+                          ? 'border-indigo-500 bg-indigo-50 shadow-xs ring-1 ring-indigo-500'
+                          : 'border-border hover:border-indigo-200 hover:bg-slate-50 bg-white'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -167,7 +167,7 @@ export function AnalysisSetupWizard({
                         </span>
                         <div
                           className={`w-4 h-4 rounded-md border flex items-center justify-center transition-colors ${
-                            isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-border bg-background'
+                            isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-border bg-white'
                           }`}
                         >
                           {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
@@ -187,7 +187,7 @@ export function AnalysisSetupWizard({
                 })}
               </div>
 
-              <div className="p-2.5 rounded-lg bg-muted/40 border border-border/60 text-xs text-muted-foreground flex items-center justify-between">
+              <div className="p-2.5 rounded-lg bg-white border border-border text-xs text-muted-foreground flex items-center justify-between shadow-xs">
                 <span>
                   {selectedUtils.length >= 2 ? (
                     <span className="text-emerald-700 font-medium flex items-center gap-1">
@@ -209,7 +209,7 @@ export function AnalysisSetupWizard({
           {/* STEP 2: Projects & Construction Window */}
           {step === 2 && (
             <div className="space-y-4">
-              <div className="p-3.5 rounded-xl border border-border/60 bg-muted/20 flex items-center justify-between gap-3">
+              <div className="p-3.5 rounded-xl border border-border bg-white flex items-center justify-between gap-3 shadow-xs">
                 <div>
                   <h4 className="font-semibold text-foreground text-xs">Date Range / Construction Window</h4>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -302,12 +302,12 @@ export function AnalysisSetupWizard({
                   max="30"
                   value={overlapDays}
                   onChange={(e) => setOverlapDays(Number(e.target.value))}
-                  className="w-16 h-8 text-center rounded-lg border border-border/60 bg-background text-xs font-mono font-bold"
+                  className="w-16 h-8 text-center rounded-lg border border-border bg-white text-xs font-mono font-bold"
                 />
               </div>
 
               {/* AI Explanation Toggle */}
-              <div className="p-3.5 rounded-xl border border-indigo-200 bg-indigo-50/30 flex items-center justify-between gap-3">
+              <div className="p-3.5 rounded-xl border border-border bg-white flex items-center justify-between gap-3 shadow-xs">
                 <div>
                   <h4 className="font-semibold text-foreground text-xs flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
@@ -330,7 +330,7 @@ export function AnalysisSetupWizard({
           {/* STEP 4: Review & Run */}
           {step === 4 && (
             <div className="space-y-4">
-              <div className="p-4 rounded-xl border border-border/60 bg-muted/20 space-y-3">
+              <div className="p-4 rounded-xl border border-border bg-white space-y-3 shadow-xs">
                 <h4 className="font-semibold text-foreground text-xs uppercase tracking-wider">
                   Analysis Parameters Summary
                 </h4>

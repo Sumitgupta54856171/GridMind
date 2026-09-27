@@ -14,9 +14,10 @@ export type ProjectType =
 export type ProjectStatus = 'planned' | 'active' | 'completed' | 'unknown'
 
 export interface ProjectGeometry {
-  type: 'Point' | 'LineString' | 'Polygon'
-  coordinates: number[] | number[][] | number[][][]
+  type: 'Point' | 'LineString' | 'Polygon' | 'MultiPolygon' | 'MultiLineString' | string
+  coordinates: any
 }
+
 
 export interface Project {
   _id: string
