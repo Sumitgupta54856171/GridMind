@@ -1,11 +1,6 @@
-from fastapi import FastAPI
+import uvicorn
+from app.main import app  # noqa: F401
 
-app = FastAPI()
-
-@app.get("/")
-def read_root():
-    return {"message": "Hello World"}
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: str = None):
-    return {"item_id": item_id, "query": q}
+if __name__ == "__main__":
+    from app.core.config import settings
+    uvicorn.run("app.main:app", host=settings.host, port=settings.port, reload=settings.debug)
