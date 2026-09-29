@@ -1,0 +1,21 @@
+[portal]
+base_url = "http://localhost:3001"
+
+[tiers]
+claimed = ["T1", "T2"]
+pitch = "GridMind is a multi-utility infrastructure intelligence platform with hackathon judging, role-isolated scoring, and CSV export."
+
+[auth]
+# Static Bearer tokens — printed by the backend on every startup.
+# These are defined in backend/src/modules/hackathon/hackathon.routes.js
+organizer   = "Authorization: Bearer hk_org_7f2a9c1e"
+judge_a     = "Authorization: Bearer hk_jdg_a91bc3d2"
+judge_b     = "Authorization: Bearer hk_jdg_b44de8f1"
+participant = "Authorization: Bearer hk_prt_2e884a07"
+
+[routes]
+gallery      = "/projects"
+submit       = "/projects/new"
+judge_scores = "/api/judge/scores"
+peer_scores  = "/api/judge/scores?judge=jdg_01"
+csv_export   = "/api/export.csv"

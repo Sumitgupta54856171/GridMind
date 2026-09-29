@@ -28,6 +28,7 @@ const conflictRoutes = require('./src/modules/conflicts/conflict.routes');
 const aiRoutes = require('./src/modules/ai/ai.routes');
 const transportationRoutes = require('./src/modules/transportation/transportation.routes');
 const dashboardRoutes = require('./src/modules/dashboard/dashboard.routes');
+const { router: hackathonRouter, printTokens } = require('./src/modules/hackathon/hackathon.routes');
 
 const app = express();
 
@@ -59,7 +60,8 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/transportation', transportationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
-
+// ── Hackathon judging routes (dogfood checker) ────────────────
+app.use('/', hackathonRouter);
 
 // ── Error handler (must be last) ──────────────────────────────
 app.use(errorHandler);
@@ -70,5 +72,6 @@ const PORT = process.env.PORT || 3001;
 connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`Backend running on http://localhost:${PORT}`);
+    printTokens();
   });
 });

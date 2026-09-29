@@ -8,10 +8,15 @@
  * Calculates distance between two [lng, lat] coordinate pairs in meters using Haversine formula.
  */
 function calculateHaversineDistanceMeters(coordA, coordB) {
-  if (!coordA || !coordB || coordA.length < 2 || coordB.length < 2) return null;
+  if (!coordA || !coordB || !Array.isArray(coordA) || !Array.isArray(coordB)) return null;
+  if (coordA.length < 2 || coordB.length < 2) return null;
 
-  const [lng1, lat1] = coordA;
-  const [lng2, lat2] = coordB;
+  const lng1 = Number(coordA[0]);
+  const lat1 = Number(coordA[1]);
+  const lng2 = Number(coordB[0]);
+  const lat2 = Number(coordB[1]);
+
+  if (isNaN(lng1) || isNaN(lat1) || isNaN(lng2) || isNaN(lat2)) return null;
 
   const R = 6371000; // Earth's radius in meters
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -25,24 +30,96 @@ function calculateHaversineDistanceMeters(coordA, coordB) {
       Math.sin(dLng / 2);
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Math.round(R * c);
+  const res = Math.round(R * c);
+  return isNaN(res) ? null : res;
+}
+
+/**
+ * Safely extracts an array of [lng, lat] coordinate points from any GeoJSON geometry type
+ * (Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon).
+ */
+function extractPointsFromGeometry(geom) {
+  if (!geom) return [];
+  const coords = geom.coordinates || (Array.isArray(geom) ? geom : null);
+  if (!coords || !Array.isArray(coords) || coords.length === 0) return [];
+
+  // Direct Point format: [lng, lat]
+  if (typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+    return [[coords[0], coords[1]]];
+  }
+
+  const points = [];
+  function recurse(arr) {
+    if (!Array.isArray(arr) || arr.length === 0) return;
+    if (typeof arr[0] === 'number' && typeof arr[1] === 'number') {
+      points.push([arr[0], arr[1]]);
+      return;
+    }
+    for (const item of arr) {
+      if (Array.isArray(item)) {
+        recurse(item);
+      }
+    }
+  }
+  recurse(coords);
+  return points;
+}
+
+/**
+ * Calculates minimum distance in meters between any two geometries.
+ */
+function calculateGeometryDistanceMeters(geomA, geomB) {
+  const ptsA = extractPointsFromGeometry(geomA);
+  const ptsB = extractPointsFromGeometry(geomB);
+
+  if (ptsA.length === 0 || ptsB.length === 0) return null;
+
+  // Single points fast path
+  if (ptsA.length === 1 && ptsB.length === 1) {
+    return calculateHaversineDistanceMeters(ptsA[0], ptsB[0]);
+  }
+
+  // Downsample if geometry vertices are large to ensure sub-millisecond evaluation
+  const sampleA = ptsA.length > 25 ? ptsA.filter((_, i) => i % Math.ceil(ptsA.length / 25) === 0) : ptsA;
+  const sampleB = ptsB.length > 25 ? ptsB.filter((_, i) => i % Math.ceil(ptsB.length / 25) === 0) : ptsB;
+
+  let minDistance = Infinity;
+  for (const pA of sampleA) {
+    for (const pB of sampleB) {
+      const d = calculateHaversineDistanceMeters(pA, pB);
+      if (d !== null && d < minDistance) {
+        minDistance = d;
+      }
+    }
+  }
+
+  return minDistance === Infinity ? null : minDistance;
 }
 
 /**
  * Calculates calendar overlap between two date windows in days.
+ * Resilient to missing end dates by applying standard municipal 60-day construction windows.
  */
 function calculateTemporalOverlap(startA, endA, startB, endB) {
-  if (!startA || !endA || !startB || !endB) {
+  const sA = startA ? new Date(startA).getTime() : null;
+  const sB = startB ? new Date(startB).getTime() : null;
+
+  // If both projects lack start dates entirely, treat as planned concurrently in cycle
+  if (!sA && !sB) {
+    return { overlap: true, overlapDays: 14, overlapStart: null, overlapEnd: null, isEstimated: true };
+  }
+
+  const effectiveSA = sA || sB;
+  const effectiveEA = endA ? new Date(endA).getTime() : (effectiveSA ? effectiveSA + 60 * 86400000 : null);
+  const effectiveSB = sB || sA;
+  const effectiveEB = endB ? new Date(endB).getTime() : (effectiveSB ? effectiveSB + 60 * 86400000 : null);
+
+  if (!effectiveSA || !effectiveEA || !effectiveSB || !effectiveEB) {
     return { overlap: false, overlapDays: 0, overlapStart: null, overlapEnd: null };
   }
 
-  const sA = new Date(startA).getTime();
-  const eA = new Date(endA).getTime();
-  const sB = new Date(startB).getTime();
-  const eB = new Date(endB).getTime();
-
-  const overlapStart = Math.max(sA, sB);
-  const overlapEnd = Math.min(eA, eB);
+  const overlapStart = Math.max(effectiveSA, effectiveSB);
+  const overlapEnd = Math.min(effectiveEA, effectiveEB);
 
   if (overlapEnd >= overlapStart) {
     const diffTime = Math.abs(overlapEnd - overlapStart);
@@ -77,27 +154,27 @@ function checkCorridorSimilarity(pA, pB) {
 }
 
 /**
- * Analyzes pairs of projects across utilities and returns candidate conflicts with evidence items.
+ * Analyzes pairs of projects and returns candidate conflicts with evidence items.
  */
 function evaluateProjectPair(pA, pB, options = {}) {
   const spatialThreshold = options.spatialThresholdMeters || 100;
   const minOverlapDays = options.minimumOverlapDays ?? 0;
 
-  // 1. Spatial evaluation
-  const coordsA = pA.geometry?.coordinates;
-  const coordsB = pB.geometry?.coordinates;
-  const distance = calculateHaversineDistanceMeters(coordsA, coordsB);
+  // 1. Spatial evaluation across Points, LineStrings, or Polygons
+  const distance = calculateGeometryDistanceMeters(pA.geometry, pB.geometry);
   const sameCorridor = checkCorridorSimilarity(pA, pB);
 
-  // If both have coordinates, evaluate distance threshold; otherwise check corridor similarity
   let isSpatiallyClose = false;
   let effectiveDistance = distance;
 
-  if (distance !== null) {
-    isSpatiallyClose = distance <= spatialThreshold;
-  } else if (sameCorridor) {
+  if (distance !== null && distance <= spatialThreshold) {
     isSpatiallyClose = true;
-    effectiveDistance = 45; // Estimated nominal proximity for shared street
+  } else if (sameCorridor) {
+    // If on same named corridor, allow spatial proximity up to 500m or nominal 45m
+    if (distance === null || distance <= Math.max(spatialThreshold * 2.5, 500)) {
+      isSpatiallyClose = true;
+      effectiveDistance = distance !== null ? distance : 45;
+    }
   }
 
   // 2. Temporal evaluation
@@ -138,7 +215,7 @@ function evaluateProjectPair(pA, pB, options = {}) {
   // 5. Matched signals
   const matchedSignals = [];
   if (sameCorridor) matchedSignals.push('Same corridor');
-  else if (isSpatiallyClose) matchedSignals.push('Proximity under threshold');
+  else if (isSpatiallyClose) matchedSignals.push(`Proximity under threshold (${effectiveDistance}m)`);
   if (hasTemporalOverlap) matchedSignals.push(`Overlapping construction (${temporal.overlapDays} days)`);
   if (pA.projectType && pB.projectType) {
     matchedSignals.push(`${pA.projectType.toUpperCase()} + ${pB.projectType.toUpperCase()} excavation`);
@@ -150,9 +227,9 @@ function evaluateProjectPair(pA, pB, options = {}) {
       evidenceType: 'spatial_calculation',
       field: 'distanceMeters',
       value: effectiveDistance ?? 'Adjacent corridor',
-      confidence: coordsA && coordsB ? 1.0 : 0.8,
+      confidence: distance !== null ? 1.0 : 0.8,
       sourceReference: {
-        section: 'Geospatial Haversine Proximity',
+        section: 'Geospatial Proximity',
       },
     },
     {
@@ -161,7 +238,7 @@ function evaluateProjectPair(pA, pB, options = {}) {
       value: temporal.overlapDays,
       confidence: 1.0,
       sourceReference: {
-        section: `Window: ${temporal.overlapStart?.toISOString().split('T')[0]} to ${temporal.overlapEnd?.toISOString().split('T')[0]}`,
+        section: `Window: ${temporal.overlapStart ? new Date(temporal.overlapStart).toISOString().split('T')[0] : 'Concurrent'} to ${temporal.overlapEnd ? new Date(temporal.overlapEnd).toISOString().split('T')[0] : 'End'}`,
       },
     },
     {
@@ -216,6 +293,8 @@ function evaluateProjectPair(pA, pB, options = {}) {
 
 module.exports = {
   calculateHaversineDistanceMeters,
+  extractPointsFromGeometry,
+  calculateGeometryDistanceMeters,
   calculateTemporalOverlap,
   checkCorridorSimilarity,
   evaluateProjectPair,

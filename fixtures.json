@@ -1,0 +1,91 @@
+{
+  "event": {
+    "id": "evt_01",
+    "name": "Sample Hack 2026",
+    "submissions_close": "2026-03-01T18:00:00Z"
+  },
+  "tracks": [
+    { "id": "trk_01", "name": "Developer tools" },
+    { "id": "trk_02", "name": "AI & Machine Learning" },
+    { "id": "trk_03", "name": "Open Data" }
+  ],
+  "judges": [
+    { "id": "jdg_01", "name": "Ada Okonkwo",    "email": "ada@example.org",    "tracks": ["trk_01"] },
+    { "id": "jdg_02", "name": "Ben Hargreaves",  "email": "ben@example.org",    "tracks": ["trk_02"] },
+    { "id": "jdg_03", "name": "Carmen Reyes",    "email": "carmen@example.org", "tracks": ["trk_01", "trk_03"] }
+  ],
+  "teams": [
+    { "id": "tm_01", "name": "Nightshift",      "members": ["ada@example.org"] },
+    { "id": "tm_02", "name": "Byte Bandits",    "members": ["ben@example.org", "u3@example.org"] },
+    { "id": "tm_03", "name": "GridMind",        "members": ["u4@example.org", "u5@example.org"] },
+    { "id": "tm_04", "name": "LaunchPad",       "members": ["u6@example.org"] },
+    { "id": "tm_05", "name": "The Duplicates",  "members": ["u7@example.org"] },
+    { "id": "tm_06", "name": "The Duplicates",  "members": ["u8@example.org"] }
+  ],
+  "projects": [
+    {
+      "id": "prj_01",
+      "team": "tm_01",
+      "track": "trk_01",
+      "title": "Quiet Hours",
+      "summary": "A developer tool that silences non-critical alerts outside working hours.",
+      "repo_url": "https://github.com/example/quiet-hours",
+      "submitted_at": "2026-02-28T22:14:00Z"
+    },
+    {
+      "id": "prj_02",
+      "team": "tm_02",
+      "track": "trk_02",
+      "title": "AutoDoc AI",
+      "summary": "Generates documentation from codebases using large language models.",
+      "repo_url": "https://github.com/example/autodoc-ai",
+      "submitted_at": "2026-02-27T15:30:00Z"
+    },
+    {
+      "id": "prj_03",
+      "team": "tm_03",
+      "track": "trk_01",
+      "title": "GridMind Portal",
+      "summary": "Multi-utility infrastructure intelligence platform with conflict detection.",
+      "repo_url": "https://github.com/example/gridmind",
+      "submitted_at": "2026-03-01T17:58:00Z"
+    },
+    {
+      "id": "prj_04",
+      "team": "tm_04",
+      "track": "trk_03",
+      "title": "OpenBudget",
+      "summary": "Visualises public spending data with anomaly alerts.",
+      "repo_url": "https://github.com/example/openbudget",
+      "submitted_at": "2026-02-25T10:00:00Z"
+    },
+    {
+      "id": "prj_05",
+      "team": "tm_05",
+      "track": "trk_02",
+      "title": "DupDetect",
+      "summary": "Detects near-duplicate submissions in hackathon portals.",
+      "repo_url": "https://github.com/example/dupdetect",
+      "submitted_at": "2026-02-26T09:00:00Z"
+    },
+    {
+      "id": "prj_06",
+      "team": "tm_06",
+      "track": "trk_02",
+      "title": "DupDetect",
+      "summary": "Detects near-duplicate submissions — duplicate title edge case.",
+      "repo_url": "https://github.com/example/dupdetect-fork",
+      "submitted_at": "2026-02-26T09:05:00Z"
+    }
+  ],
+  "scores": [
+    { "judge": "jdg_01", "project": "prj_01", "criteria": { "functionality": 4, "quality": 3, "innovation": 4 }, "comment": "Solid UX, good scope." },
+    { "judge": "jdg_01", "project": "prj_02", "criteria": { "functionality": 4, "quality": 4, "innovation": 4 }, "comment": "Impressive output quality." },
+    { "judge": "jdg_01", "project": "prj_03", "criteria": { "functionality": 4, "quality": 4, "innovation": 4 }, "comment": "Every project rated the same." },
+    { "judge": "jdg_01", "project": "prj_04", "criteria": { "functionality": 4, "quality": 4, "innovation": 4 }, "comment": "" },
+    { "judge": "jdg_02", "project": "prj_02", "criteria": { "functionality": 5, "quality": 4, "innovation": 5 }, "comment": "Best AI project." },
+    { "judge": "jdg_02", "project": "prj_05", "criteria": { "functionality": 3, "quality": 3, "innovation": 3 }, "comment": "" },
+    { "judge": "jdg_03", "project": "prj_01", "criteria": { "functionality": 5, "quality": 5, "innovation": 4 }, "comment": "Really polished." },
+    { "judge": "jdg_03", "project": "prj_04", "criteria": { "functionality": 4, "quality": 3, "innovation": 4 }, "comment": "Good data work." }
+  ]
+}

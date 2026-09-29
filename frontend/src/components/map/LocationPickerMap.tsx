@@ -216,20 +216,12 @@ export function LocationPickerMap({
       zoomControl: false,
     })
 
-    const tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      maxZoom: 20,
-      subdomains: 'abcd',
+    // OpenStreetMap tile layer — free, no API key required
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
       attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
+        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
     }).addTo(map)
-
-    tileLayer.on('tileerror', (e) => {
-      const tile = e.tile as HTMLImageElement
-      if (tile && !tile.dataset.fallbackTried) {
-        tile.dataset.fallbackTried = 'true'
-        tile.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/${e.coords.z}/${e.coords.y}/${e.coords.x}`
-      }
-    })
 
     L.control.zoom({ position: 'topright' }).addTo(map)
 
