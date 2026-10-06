@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     debug: bool = True
     environment: str = "development"
     express_url: str = "http://localhost:3001"
-    project_id: str = "geometric-team-457805-j0"
+    project_id: str = "geometric-hellolajjlaksdj-slakfj-j0"
     gemini_location: str = "us-central1"
     gemini_model: str = "gemini-2.5-flash"
     llm_provider: str = "gemini"
