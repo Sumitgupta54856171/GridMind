@@ -1,0 +1,4 @@
+
+pdfplumber
+pypdf
+langchain-fireworks
