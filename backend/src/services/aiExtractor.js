@@ -2,7 +2,7 @@ const axios = require('axios');
 const fs = require('fs');
 const FormData = require('form-data');
 
-const FASTAPI_URL = process.env.FASTAPI_URL || 'http://localhost:8000';
+const FASTAPI_URL = (process.env.FASTAPI_URL || 'http://localhost:8000').replace(/\/+$/, '');
 
 /**
  * Calls FastAPI Gemini AI Agent to extract structured projects from document/data.

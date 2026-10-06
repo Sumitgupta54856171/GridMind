@@ -1,7 +1,7 @@
 const axios = require('axios');
 const AIRequest = require('../models/AIRequest');
 
-const FASTAPI_URL = process.env.FASTAPI_URL || 'http://localhost:8000';
+const FASTAPI_URL = (process.env.FASTAPI_URL || 'http://localhost:8000').replace(/\/+$/, '');
 
 /**
  * Calls FastAPI Gemini AI Agent to generate actionable coordination recommendations,

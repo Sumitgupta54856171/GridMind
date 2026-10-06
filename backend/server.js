@@ -32,6 +32,9 @@ const { router: hackathonRouter, printTokens } = require('./src/modules/hackatho
 
 const app = express();
 
+// Trust proxy for Render / Cloudflare / Netlify reverse proxies
+app.set('trust proxy', 1);
+
 // ── Security & parsing ────────────────────────────────────────
 app.use(helmet());
 app.use(cors({ origin: "*", credentials: true }));

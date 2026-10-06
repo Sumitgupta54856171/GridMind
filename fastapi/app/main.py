@@ -12,10 +12,18 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://gridmind-dkqd.onrender.com"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# Normalize duplicate slashes in URL paths (e.g. //internal/extract -> /internal/extract)
+@app.middleware("http")
+async def normalize_slashes(request, call_next):
+    if "//" in request.scope.get("path", ""):
+        import re
+        request.scope["path"] = re.sub(r"/+", "/", request.scope["path"])
+    return await call_next(request)
 
 app.include_router(api_router)
+
