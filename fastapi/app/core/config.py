@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     debug: bool = True
     environment: str = "development"
-    express_url: str = "http://localhost:3001"
+    express_url: str = "https://gridmind-dkqd.onrender.com"
     project_id: str = "geometric-hellolajjlaksdj-slakfj-j0"
     gemini_location: str = "us-central1"
     gemini_model: str = "gemini-2.5-flash"

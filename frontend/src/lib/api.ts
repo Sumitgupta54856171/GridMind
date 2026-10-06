@@ -3,7 +3,7 @@ import { store } from '@/store'
 import { logout } from '@/store/slices/authSlice'
 
 const api = axios.create({
-  baseURL: `https://gridmind-dkqd.onrender.com/api`,
+  baseURL: import.meta.env.VITE_API_URL || 'https://gridmind-dkqd.onrender.com/api',
   headers: {
     'Content-Type': 'application/json',
   },
